@@ -1,0 +1,15 @@
+<smiles_database>
+    <compound>
+        <name>CH4</name>
+        <smiles>C</smiles>  <!-- CH4 的 SMILES 是 C -->
+    </compound>
+    <compound>
+        <name>C6H12</name>
+        <smiles>C1CCCCC1</smiles>  <!-- C6H12 是环己烷的 SMILES -->
+    </compound>
+    <compound>
+        <name>C2H6O</name>
+        <smiles>CCO</smiles>  <!-- 乙醇的 SMILES -->
+    </compound>
+    <!-- 添加更多常见化学式和 SMILES -->
+</smiles_database>
