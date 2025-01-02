@@ -16,7 +16,7 @@ def load_smiles_database(file="smiles_database.xml"):
     
     smiles_dict = {}
     for compound in root.findall("compound"):
-        name = compound.find("name").text
+        name = compound.find("formula").text
         smiles = compound.find("smiles").text
         smiles_dict[name] = smiles
     
