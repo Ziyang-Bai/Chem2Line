@@ -63,7 +63,11 @@ def show_smiles_selection(smiles_list):
     selection_window.wait_window()
     return selected_smiles.get()
 
+def on_submit():
+    input_text = formula_entry.get().strip()  # 获取用户输入
+    smiles_list = get_smiles_options(input_text, smiles_dict)
 
+<<<<<<< HEAD
 def show_progress_window():
     """
     显示进度条窗口
@@ -73,6 +77,26 @@ def show_progress_window():
     progress_window.title("加载数据库中")
     progress_window.geometry("400x100")
     progress_window.resizable(False, False)
+=======
+    if not smiles_list:
+        messagebox.showerror("错误", f"找不到 {input_text} 的 SMILES 表示。")
+    elif len(smiles_list) == 1:
+        selected_smiles = smiles_list[0]
+    else:
+        # 弹出选择窗口
+        selected_smiles = show_smiles_selection(smiles_list)
+
+    if selected_smiles:
+        try:
+            img = formula_to_bondline(selected_smiles)
+            img = ImageTk.PhotoImage(img)
+
+            result_label.config(image=img)
+            result_label.image = img  # 保存引用，防止被垃圾回收
+
+        except RuntimeError as e:
+            messagebox.showerror("错误", str(e))
+>>>>>>> parent of 0014d2d (error handling)
 
     label = tk.Label(progress_window, text="加载中，请稍候...", font=("Arial", 12))
     label.pack(pady=10)
@@ -94,18 +118,17 @@ def change_database():
     file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
     if file_path:
         try:
+<<<<<<< HEAD
             update_progress = show_progress_window_with_estimation()  # 显示进度条
             new_smiles_dict = load_smiles_database_with_progress(file_path, update_progress)
             smiles_dict = new_smiles_dict  # 更新全局数据库
+=======
+            smiles_dict = load_smiles_database(file_path)
+>>>>>>> parent of 0014d2d (error handling)
             database_info = get_database_info(file_path)
             messagebox.showinfo("数据库已更换", f"当前数据库信息:\n{database_info}")
-        except FileNotFoundError as e:
-            messagebox.showerror("错误", str(e))
-        except ValueError as e:
-            messagebox.showerror("数据库格式错误", str(e))
-        except RuntimeError as e:
-            messagebox.showerror("加载错误", str(e))
         except Exception as e:
+<<<<<<< HEAD
             messagebox.showerror("未知错误", f"无法加载数据库: {e}")
 
 def save_image():
@@ -189,6 +212,9 @@ def show_progress_window_with_estimation():
 
     return update_progress
 
+=======
+            messagebox.showerror("错误", f"无法加载数据库: {e}")
+>>>>>>> parent of 0014d2d (error handling)
 
 def show_database_info():
     info = get_database_info()

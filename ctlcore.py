@@ -16,10 +16,10 @@ def load_smiles_database(file="default_database.xml"):
     if not os.path.exists(file):
         raise FileNotFoundError(f"找不到数据库文件: {file}")
 
-    try:
-        tree = ET.parse(file)
-        root = tree.getroot()
+    tree = ET.parse(file)
+    root = tree.getroot()
 
+<<<<<<< HEAD
         smiles_dict = {}
         for compound in root.findall("compound"):
             formula = compound.find("formula")
@@ -83,7 +83,18 @@ def load_smiles_database_with_progress(file, update_progress):
         raise ValueError(f"数据库解析失败: {e}")
     except Exception as e:
         raise RuntimeError(f"加载数据库时发生错误: {e}")
+=======
+    smiles_dict = {}
+    for compound in root.findall("compound"):
+        name = compound.find("formula").text
+        smiles = compound.find("smiles").text
+        if name in smiles_dict:
+            smiles_dict[name].append(smiles)
+        else:
+            smiles_dict[name] = [smiles]
+>>>>>>> parent of 0014d2d (error handling)
 
+    return smiles_dict
 
 def get_smiles_options(formula, smiles_dict):
     """
