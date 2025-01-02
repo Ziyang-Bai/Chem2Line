@@ -74,12 +74,13 @@ def load_database_with_progress():
         for _ in range(100):  # 模拟加载进度
             time.sleep(0.05)
             progress_bar.step(1)
-            root.update_idletasks()
+            progress_window.update_idletasks()
 
     def load_database():
         try:
             file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
             if file_path:
+                progress_window.deiconify()  # 显示进度条窗口
                 progress_bar.start()  # 启动进度条
                 threading.Thread(target=update_progress).start()  # 启动进度条的后台更新
                 new_smiles_dict = load_smiles_database(file_path)
@@ -88,11 +89,26 @@ def load_database_with_progress():
                 database_info = get_database_info(file_path)
                 messagebox.showinfo("数据库已更换", f"当前数据库信息:\n{database_info}")
                 progress_bar.stop()  # 停止进度条
+                progress_window.withdraw()  # 隐藏进度条窗口
         except Exception as e:
             messagebox.showerror("未知错误", f"无法加载数据库: {e}")
             progress_bar.stop()  # 停止进度条
+            progress_window.withdraw()  # 隐藏进度条窗口
+
+    # 创建一个新的进度条窗口
+    progress_window = tk.Toplevel()
+    progress_window.title("加载数据库中")
+    progress_window.geometry("300x100")
+    progress_window.withdraw()  # 初始时隐藏窗口
+
+    progress_label = tk.Label(progress_window, text="加载中，请稍候...", font=("Arial", 12))
+    progress_label.pack(pady=10)
+
+    progress_bar = ttk.Progressbar(progress_window, orient="horizontal", length=250, mode="indeterminate")
+    progress_bar.pack(pady=10)
 
     threading.Thread(target=load_database).start()  # 启动加载数据库的后台线程
+
 
 def on_submit():
     input_text = formula_entry.get().strip()  # 获取用户输入
@@ -218,9 +234,6 @@ submit_button.pack(pady=20)
 result_label = tk.Label(root)
 result_label.pack(pady=20)
 
-# 创建进度条
-progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="indeterminate")
-progress_bar.pack(pady=20)
 
 # 运行主窗口
 root.mainloop()
