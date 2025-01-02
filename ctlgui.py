@@ -67,17 +67,6 @@ def on_submit():
     input_text = formula_entry.get().strip()  # 获取用户输入
     smiles_list = get_smiles_options(input_text, smiles_dict)
 
-<<<<<<< HEAD
-def show_progress_window():
-    """
-    显示进度条窗口
-    :return: 更新进度的回调函数
-    """
-    progress_window = tk.Toplevel()
-    progress_window.title("加载数据库中")
-    progress_window.geometry("400x100")
-    progress_window.resizable(False, False)
-=======
     if not smiles_list:
         messagebox.showerror("错误", f"找不到 {input_text} 的 SMILES 表示。")
     elif len(smiles_list) == 1:
@@ -96,40 +85,6 @@ def show_progress_window():
 
         except RuntimeError as e:
             messagebox.showerror("错误", str(e))
->>>>>>> parent of 0014d2d (error handling)
-
-    label = tk.Label(progress_window, text="加载中，请稍候...", font=("Arial", 12))
-    label.pack(pady=10)
-
-    progress_bar = ttk.Progressbar(progress_window, orient="horizontal", length=300, mode="determinate")
-    progress_bar.pack(pady=10)
-
-    def update_progress(current, total):
-        progress_bar["value"] = (current / total) * 100
-        progress_window.update()
-
-        if current == total:  # 完成时关闭窗口
-            progress_window.destroy()
-
-    return update_progress
-
-def change_database():
-    global smiles_dict
-    file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
-    if file_path:
-        try:
-<<<<<<< HEAD
-            update_progress = show_progress_window_with_estimation()  # 显示进度条
-            new_smiles_dict = load_smiles_database_with_progress(file_path, update_progress)
-            smiles_dict = new_smiles_dict  # 更新全局数据库
-=======
-            smiles_dict = load_smiles_database(file_path)
->>>>>>> parent of 0014d2d (error handling)
-            database_info = get_database_info(file_path)
-            messagebox.showinfo("数据库已更换", f"当前数据库信息:\n{database_info}")
-        except Exception as e:
-<<<<<<< HEAD
-            messagebox.showerror("未知错误", f"无法加载数据库: {e}")
 
 def save_image():
     if result_label.image:
@@ -138,6 +93,17 @@ def save_image():
             result_label.image._PhotoImage__photo.write(file_path)
             messagebox.showinfo("保存成功", f"键线式图像已保存到 {file_path}")
 
+def change_database():
+    global smiles_dict
+    file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
+    if file_path:
+        try:
+            new_smiles_dict = load_smiles_database(file_path)
+            smiles_dict = new_smiles_dict  # 更新全局数据库
+            database_info = get_database_info(file_path)
+            messagebox.showinfo("数据库已更换", f"当前数据库信息:\n{database_info}")
+        except Exception as e:
+            messagebox.showerror("未知错误", f"无法加载数据库: {e}")
 
 def on_submit():
     input_text = formula_entry.get().strip()
@@ -172,49 +138,7 @@ def on_submit():
         messagebox.showerror("生成失败", str(e))
     except Exception as e:
         messagebox.showerror("未知错误", f"发生未知错误: {e}")
-def show_progress_window_with_estimation():
-    """
-    显示带时间估算的进度条窗口
-    :return: 更新进度的回调函数
-    """
-    progress_window = tk.Toplevel()
-    progress_window.title("加载数据库中")
-    progress_window.geometry("400x150")
-    progress_window.resizable(False, False)
 
-    label = tk.Label(progress_window, text="加载中，请稍候...", font=("Arial", 12))
-    label.pack(pady=10)
-
-    progress_bar = ttk.Progressbar(progress_window, orient="horizontal", length=300, mode="determinate")
-    progress_bar.pack(pady=10)
-
-    time_label = tk.Label(progress_window, text="", font=("Arial", 10), fg="blue")
-    time_label.pack(pady=5)
-
-    start_time = time.time()
-
-    def update_progress(current, total):
-        progress_bar["value"] = (current / total) * 100
-        elapsed_time = time.time() - start_time
-
-        # 估算剩余时间
-        if current > 0:
-            estimated_total_time = elapsed_time / current * total
-            remaining_time = estimated_total_time - elapsed_time
-            time_label.config(text=f"预计剩余时间: {int(remaining_time)} 秒")
-        else:
-            time_label.config(text="预计剩余时间: 计算中...")
-
-        progress_window.update()
-
-        if current == total:  # 完成时关闭窗口
-            progress_window.destroy()
-
-    return update_progress
-
-=======
-            messagebox.showerror("错误", f"无法加载数据库: {e}")
->>>>>>> parent of 0014d2d (error handling)
 
 def show_database_info():
     info = get_database_info()
