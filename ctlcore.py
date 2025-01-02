@@ -42,6 +42,47 @@ def load_smiles_database(file="default_database.xml"):
         raise ValueError(f"数据库解析失败: {e}")
     except Exception as e:
         raise RuntimeError(f"加载数据库时发生错误: {e}")
+def load_smiles_database_with_progress(file, update_progress):
+    """
+    加载化学式和 SMILES 映射的数据库（带进度更新）
+    :param file: XML 文件路径
+    :param update_progress: 更新进度的回调函数
+    :return: 字典形式的化学式和 SMILES 映射
+    """
+    if not os.path.exists(file):
+        raise FileNotFoundError(f"找不到数据库文件: {file}")
+
+    try:
+        tree = ET.parse(file)
+        root = tree.getroot()
+        compounds = root.findall("compound")
+        total_compounds = len(compounds)
+
+        smiles_dict = {}
+        for index, compound in enumerate(compounds, start=1):
+            formula = compound.find("formula")
+            smiles = compound.find("smiles")
+            if formula is None or smiles is None:
+                raise ValueError(f"数据库文件格式错误: 缺少 <formula> 或 <smiles> 节点")
+
+            name = formula.text.strip()
+            smiles_text = smiles.text.strip()
+            if name in smiles_dict:
+                smiles_dict[name].append(smiles_text)
+            else:
+                smiles_dict[name] = [smiles_text]
+
+            # 更新进度
+            update_progress(index, total_compounds)
+
+        if not smiles_dict:
+            raise ValueError("数据库中未找到任何化学式或 SMILES 映射")
+
+        return smiles_dict
+    except ET.ParseError as e:
+        raise ValueError(f"数据库解析失败: {e}")
+    except Exception as e:
+        raise RuntimeError(f"加载数据库时发生错误: {e}")
 
 
 def get_smiles_options(formula, smiles_dict):
