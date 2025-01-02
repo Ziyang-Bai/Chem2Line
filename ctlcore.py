@@ -28,7 +28,8 @@ def load_smiles_database(file="default_database.xml"):
         else:
             smiles_dict[name] = [smiles]
 
-        return smiles_dict
+    return smiles_dict  # 这一行应当在 for 循环之后执行
+
 
 
 def get_smiles_options(formula, smiles_dict):

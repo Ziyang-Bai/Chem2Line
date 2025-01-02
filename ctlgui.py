@@ -1,13 +1,16 @@
-# ctlgui.py
+#ctlgui.py
 import tkinter as tk
 from tkinter import filedialog, messagebox, Scrollbar, Canvas, Menu, ttk
 from PIL import Image, ImageTk
 from ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version
 import time
+import threading
+
 VERSION = "1.0"
 DEVELOPER = "Ziyang-Bai"
 DATE = "2025-01-01"
 CORE_VERSION = core_version()
+
 def show_smiles_selection(smiles_list):
     """
     弹出窗口显示可供选择的 SMILES
@@ -63,6 +66,34 @@ def show_smiles_selection(smiles_list):
     selection_window.wait_window()
     return selected_smiles.get()
 
+def load_database_with_progress():
+    """
+    在后台线程中加载数据库，并显示进度条。
+    """
+    def update_progress():
+        for _ in range(100):  # 模拟加载进度
+            time.sleep(0.05)
+            progress_bar.step(1)
+            root.update_idletasks()
+
+    def load_database():
+        try:
+            file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
+            if file_path:
+                progress_bar.start()  # 启动进度条
+                threading.Thread(target=update_progress).start()  # 启动进度条的后台更新
+                new_smiles_dict = load_smiles_database(file_path)
+                global smiles_dict
+                smiles_dict = new_smiles_dict  # 更新全局数据库
+                database_info = get_database_info(file_path)
+                messagebox.showinfo("数据库已更换", f"当前数据库信息:\n{database_info}")
+                progress_bar.stop()  # 停止进度条
+        except Exception as e:
+            messagebox.showerror("未知错误", f"无法加载数据库: {e}")
+            progress_bar.stop()  # 停止进度条
+
+    threading.Thread(target=load_database).start()  # 启动加载数据库的后台线程
+
 def on_submit():
     input_text = formula_entry.get().strip()  # 获取用户输入
     smiles_list = get_smiles_options(input_text, smiles_dict)
@@ -94,16 +125,7 @@ def save_image():
             messagebox.showinfo("保存成功", f"键线式图像已保存到 {file_path}")
 
 def change_database():
-    global smiles_dict
-    file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
-    if file_path:
-        try:
-            new_smiles_dict = load_smiles_database(file_path)
-            smiles_dict = new_smiles_dict  # 更新全局数据库
-            database_info = get_database_info(file_path)
-            messagebox.showinfo("数据库已更换", f"当前数据库信息:\n{database_info}")
-        except Exception as e:
-            messagebox.showerror("未知错误", f"无法加载数据库: {e}")
+    load_database_with_progress()  # 使用新的加载数据库方法
 
 def on_submit():
     input_text = formula_entry.get().strip()
@@ -138,7 +160,6 @@ def on_submit():
         messagebox.showerror("生成失败", str(e))
     except Exception as e:
         messagebox.showerror("未知错误", f"发生未知错误: {e}")
-
 
 def show_database_info():
     info = get_database_info()
@@ -196,6 +217,10 @@ submit_button.pack(pady=20)
 # 显示生成结果的标签
 result_label = tk.Label(root)
 result_label.pack(pady=20)
+
+# 创建进度条
+progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="indeterminate")
+progress_bar.pack(pady=20)
 
 # 运行主窗口
 root.mainloop()
