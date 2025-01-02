@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, Scrollbar, Canvas, Menu, ttk
 from PIL import Image, ImageTk
-from ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version, load_smiles_database_with_progress
+from ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version
 import time
 VERSION = "1.0"
 DEVELOPER = "Ziyang-Bai"

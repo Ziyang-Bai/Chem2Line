@@ -29,10 +29,6 @@ def load_smiles_database(file="default_database.xml"):
             smiles_dict[name] = [smiles]
 
         return smiles_dict
-    except ET.ParseError as e:
-        raise ValueError(f"数据库解析失败: {e}")
-    except Exception as e:
-        raise RuntimeError(f"加载数据库时发生错误: {e}")
 
 
 def get_smiles_options(formula, smiles_dict):
