@@ -62,28 +62,7 @@ def show_smiles_selection(smiles_list):
     selection_window.wait_window()
     return selected_smiles.get()
 
-def on_submit():
-    input_text = formula_entry.get().strip()  # 获取用户输入
-    smiles_list = get_smiles_options(input_text, smiles_dict)
 
-    if not smiles_list:
-        messagebox.showerror("错误", f"找不到 {input_text} 的 SMILES 表示。")
-    elif len(smiles_list) == 1:
-        selected_smiles = smiles_list[0]
-    else:
-        # 弹出选择窗口
-        selected_smiles = show_smiles_selection(smiles_list)
-
-    if selected_smiles:
-        try:
-            img = formula_to_bondline(selected_smiles)
-            img = ImageTk.PhotoImage(img)
-
-            result_label.config(image=img)
-            result_label.image = img  # 保存引用，防止被垃圾回收
-
-        except RuntimeError as e:
-            messagebox.showerror("错误", str(e))
 
 def save_image():
     if result_label.image:
@@ -97,11 +76,53 @@ def change_database():
     file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
     if file_path:
         try:
-            smiles_dict = load_smiles_database(file_path)
+            new_smiles_dict = load_smiles_database(file_path)
+            smiles_dict = new_smiles_dict  # 更新全局数据库
             database_info = get_database_info(file_path)
             messagebox.showinfo("数据库已更换", f"当前数据库信息:\n{database_info}")
+        except FileNotFoundError as e:
+            messagebox.showerror("错误", str(e))
+        except ValueError as e:
+            messagebox.showerror("数据库格式错误", str(e))
+        except RuntimeError as e:
+            messagebox.showerror("加载错误", str(e))
         except Exception as e:
-            messagebox.showerror("错误", f"无法加载数据库: {e}")
+            messagebox.showerror("未知错误", f"无法加载数据库: {e}")
+
+def on_submit():
+    input_text = formula_entry.get().strip()
+    if not input_text:
+        messagebox.showwarning("输入为空", "请输入化学式或 SMILES")
+        return
+
+    try:
+        smiles_list = get_smiles_options(input_text, smiles_dict)
+
+        if not smiles_list:
+            raise ValueError(f"找不到 {input_text} 的 SMILES 表示，请检查输入或更换数据库")
+
+        if len(smiles_list) == 1:
+            selected_smiles = smiles_list[0]
+        else:
+            selected_smiles = show_smiles_selection(smiles_list)
+
+        if selected_smiles:
+            try:
+                img = formula_to_bondline(selected_smiles)
+                img = ImageTk.PhotoImage(img)
+
+                result_label.config(image=img)
+                result_label.image = img
+            except Exception as e:
+                raise RuntimeError(f"无法生成键线式: {e}")
+
+    except ValueError as e:
+        messagebox.showerror("未找到结果", str(e))
+    except RuntimeError as e:
+        messagebox.showerror("生成失败", str(e))
+    except Exception as e:
+        messagebox.showerror("未知错误", f"发生未知错误: {e}")
+
 
 def show_database_info():
     info = get_database_info()
