@@ -14,4 +14,6 @@
     <english>Anglais</english>
     <chinese>Chinois</chinese>
     <language_name>Français</language_name>
+    <restart_title>Redémarrer l'application</restart_title>
+    <restart_message>La langue a été changée. Veuillez redémarrer l'application pour appliquer les modifications.</restart_message>
 </language>

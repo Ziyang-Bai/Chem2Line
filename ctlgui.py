@@ -257,29 +257,13 @@ def load_language(lang_file):
         messagebox.showerror("语言错误", f"无法加载语言文件: {e}")
         return {}
 
-# 更新界面语言
-def update_language(lang_dict):
-    input_label.config(text=lang_dict.get("input_label", "请输入化学式或 SMILES："))
-    submit_button.config(text=lang_dict.get("submit_button", "生成键线式"))
-    file_menu.entryconfig(0, label=lang_dict.get("save_image", "保存键线式图像"))
-    file_menu.entryconfig(2, label=lang_dict.get("exit", "退出"))
-    menu_bar.entryconfig(0, label=lang_dict.get("file", "文件"))
-    database_menu.entryconfig(0, label=lang_dict.get("change_database", "更换数据库"))
-    database_menu.entryconfig(1, label=lang_dict.get("database_info", "关于数据库"))
-    menu_bar.entryconfig(1, label=lang_dict.get("database", "数据库"))
-    about_menu.entryconfig(0, label=lang_dict.get("developer", "开发者"))
-    about_menu.entryconfig(1, label=lang_dict.get("repository", "软件仓库"))
-    menu_bar.entryconfig(2, label=lang_dict.get("about", "关于"))
-    language_menu.entryconfig(0, label=lang_dict.get("english", "English"))
-    language_menu.entryconfig(1, label=lang_dict.get("chinese", "中文"))
-    menu_bar.entryconfig(3, label=lang_dict.get("language", "语言"))
-
 # 切换语言
 def change_language(lang):
     config['language'] = lang
     save_config(config)
     lang_dict = load_language(f'./lang/{lang}.xml')
-    update_language(lang_dict)
+    messagebox.showinfo(lang_dict.get("restart_title", "重启应用"), lang_dict.get("restart_message", "语言已更改，请重启应用以应用更改。"))
+    root.quit()
 
 # 初始化配置和语言
 config = load_config()
@@ -318,8 +302,8 @@ menu_bar.add_cascade(label=lang_dict.get("about", "关于"), menu=about_menu)
 # 语言菜单
 language_menu = Menu(menu_bar, tearoff=0)
 for lang in config['available_languages']:
-    lang_dict = load_language(f'./lang/{lang}.xml')
-    language_menu.add_command(label=lang_dict.get("language_name", lang), command=lambda l=lang: change_language(l))
+    lang_name = load_language(f'./lang/{lang}.xml').get("language_name", lang)
+    language_menu.add_command(label=lang_name, command=lambda l=lang: change_language(l))
 menu_bar.add_cascade(label=lang_dict.get("language", "语言"), menu=language_menu)
 
 # 加载 SMILES 数据库
@@ -339,7 +323,6 @@ submit_button.pack(pady=20)
 # 显示生成结果的标签
 result_label = tk.Label(root)
 result_label.pack(pady=20)
-
 
 # 运行主窗口
 root.mainloop()

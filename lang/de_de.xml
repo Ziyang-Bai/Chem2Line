@@ -14,4 +14,6 @@
     <english>Englisch</english>
     <chinese>Chinesisch</chinese>
     <language_name>Deutsch</language_name>
+    <restart_title>Anwendung neu starten</restart_title>
+    <restart_message>Die Sprache wurde geändert. Bitte starten Sie die Anwendung neu, um die Änderungen zu übernehmen.</restart_message>
 </language>

@@ -14,4 +14,6 @@
     <english>English</english>
     <chinese>Chinese</chinese>
     <language_name>English</language_name>
+    <restart_title>Restart Application</restart_title>
+    <restart_message>Language has been changed. Please restart the application to apply the changes.</restart_message>
 </language>

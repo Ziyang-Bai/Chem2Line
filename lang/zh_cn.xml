@@ -14,4 +14,6 @@
     <english>英语</english>
     <chinese>中文</chinese>
     <language_name>中文</language_name>
+    <restart_title>重启应用</restart_title>
+    <restart_message>语言已更改，请重启应用以应用更改。</restart_message>
 </language>
