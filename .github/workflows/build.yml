@@ -4,7 +4,14 @@ on:
   push:
     branches:
       - main
+    # Trigger the workflow only when Python files are changed
+    paths:
+      - '**/*.py'  # Monitor all Python files in the repository
   pull_request:
+    # Trigger on pull requests but only for Python files
+    paths:
+      - '**/*.py'  # Monitor all Python files in the repository
+  workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
   build:
@@ -39,7 +46,7 @@ jobs:
         conda activate build-env
         pyinstaller --onefile --windowed --icon=nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
 
-    # 跳过 UPX 压缩
+    # Skip UPX compression
     - name: Skip UPX compression (if UPX fails)
       run: echo "Skipping UPX compression due to errors."
     

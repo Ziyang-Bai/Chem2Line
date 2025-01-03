@@ -92,3 +92,6 @@ def get_database_info(file="default_database.xml"):
     }
     return info
 
+if __name__ == "__main__":
+    print("核心版本：",core_version())
+    print("本模块为Chem2Line的核心模块，无法直接运行，请使用ctlgui.")
