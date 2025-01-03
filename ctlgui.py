@@ -1,12 +1,14 @@
 #ctlgui.py
 import tkinter as tk
-from tkinter import filedialog, messagebox, Scrollbar, Canvas, Menu, ttk
+from tkinter import filedialog, messagebox, Scrollbar, Canvas, Menu, ttk, Toplevel, StringVar, OptionMenu
 from PIL import Image, ImageTk
-from ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version
+from lib.ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version
 import time
 import threading
 import xml.etree.ElementTree as ET
-database_path = "default_database.xml"
+import os
+
+database_path = "lib/db/default_database.xml"
 VERSION = "1.1"
 DEVELOPER = "Ziyang-Bai"
 DATE = "2025-01-01"
@@ -21,7 +23,7 @@ def show_smiles_selection(smiles_list):
     selection_window = tk.Toplevel()
     selection_window.title(f"Chem2Line - {lang_dict.get('select_smiles_title', '选择 SMILES 表示')}")
     selection_window.geometry("600x400")
-    selection_window.iconbitmap("nctl.ico")
+    selection_window.iconbitmap("lib/media/nctl.ico")
 
     selected_smiles = tk.StringVar()
 
@@ -69,7 +71,7 @@ def show_smiles_selection(smiles_list):
     selection_window.wait_window()
     return selected_smiles.get()
 
-def load_database_with_progress():
+def load_database_with_progress(file_path=None):
     """
     在后台线程中加载数据库，并显示进度条。
     """
@@ -81,7 +83,9 @@ def load_database_with_progress():
 
     def load_database():
         try:
-            file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
+            nonlocal file_path
+            if not file_path:
+                file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
             if file_path:
                 progress_window.deiconify()  # 显示进度条窗口
                 progress_bar.start()  # 启动进度条
@@ -104,7 +108,7 @@ def load_database_with_progress():
     progress_window = tk.Toplevel()
     progress_window.title(f"Chem2Line - {lang_dict.get('loading_database_title', '加载数据库中')}")
     progress_window.geometry("300x100")
-    progress_window.iconbitmap("nctl.ico")
+    progress_window.iconbitmap("lib/media/nctl.ico")
     progress_window.withdraw()  # 初始时隐藏窗口
     progress_window.attributes("-toolwindow", 2)
     progress_label = tk.Label(progress_window, text=lang_dict.get("loading_database_message", "加载中，请稍候..."), font=("Arial", 12))
@@ -174,11 +178,11 @@ def show_about_developer_with_icon():
     about_window = tk.Toplevel(root)
     about_window.title(f"Chem2Line - {lang_dict.get('about_developer_title', '关于开发者')}")
     about_window.geometry("300x400")
-    about_window.iconbitmap("nctl.ico")
+    about_window.iconbitmap("lib/media/nctl.ico")
 
     # 加载图片
     try:
-        icon_image = tk.PhotoImage(file="chem2line.png")  # 替换为图标的路径
+        icon_image = tk.PhotoImage(file="lib/media/chem2line.png")  # 替换为图标的路径
         icon_label = tk.Label(about_window, image=icon_image)
         icon_label.image = icon_image  # 保存引用，防止被垃圾回收
         icon_label.pack(pady=10)
@@ -200,7 +204,7 @@ def show_about_developer_with_icon():
 # 加载配置文件
 def load_config():
     try:
-        tree = ET.parse('./config.xml')
+        tree = ET.parse('lib/config/config.xml')
         root = tree.getroot()
         config = {child.tag: child.text for child in root if child.tag != 'available_languages'}
         config['available_languages'] = [lang.text for lang in root.find('available_languages')]
@@ -223,14 +227,14 @@ def save_config(config):
                 child = ET.SubElement(root, key)
                 child.text = value
         tree = ET.ElementTree(root)
-        tree.write('./config.xml')
+        tree.write('lib/config/config.xml')
     except Exception as e:
         messagebox.showerror(lang_dict.get("config_error_title", "配置错误"), f"{lang_dict.get('error_code', '错误代码')}: 2001\n{lang_dict.get('config_save_error_message', '无法保存配置文件')}: {e}")
 
 # 加载语言文件
 def load_language(lang_file):
     try:
-        tree = ET.parse(lang_file)
+        tree = ET.parse(f'{lang_file}')
         root = tree.getroot()
         lang_dict = {child.tag: child.text for child in root}
         return lang_dict
@@ -242,20 +246,56 @@ def load_language(lang_file):
 def change_language(lang):
     config['language'] = lang
     save_config(config)
-    lang_dict = load_language(f'./lang/{lang}.xml')
+    lang_dict = load_language(f'lib/lang/{lang}.xml')
     messagebox.showinfo(lang_dict.get("restart_title", "重启应用"), lang_dict.get("restart_message", "语言已更改，请重启应用以应用更改。"))
     root.quit()
+
+def show_config_window():
+    config_window = Toplevel(root)
+    config_window.title(lang_dict.get("config_title", "配置"))
+    config_window.geometry("400x300")
+    config_window.iconbitmap("lib/media/nctl.ico")
+
+    # 语言配置
+    lang_label = tk.Label(config_window, text=lang_dict.get("select_language", "选择语言："), font=("Arial", 12))
+    lang_label.pack(pady=10)
+    lang_var = StringVar(config_window)
+    lang_var.set(config['language'])
+    lang_options = [load_language(f'lib/lang/{lang}.xml').get("language_name", lang) for lang in config['available_languages']]
+    lang_menu = OptionMenu(config_window, lang_var, *lang_options)
+    lang_menu.pack(pady=10)
+
+    # 默认数据库配置
+    db_label = tk.Label(config_window, text=lang_dict.get("select_database", "选择默认数据库："), font=("Arial", 12))
+    db_label.pack(pady=10)
+    db_var = StringVar(config_window)
+    db_var.set(os.path.basename(database_path))
+    db_files = [f for f in os.listdir('lib/db') if f.endswith('.xml')]
+    db_menu = OptionMenu(config_window, db_var, *db_files)
+    db_menu.pack(pady=10)
+
+    def save_config_changes():
+        selected_lang = config['available_languages'][lang_options.index(lang_var.get())]
+        config['language'] = selected_lang
+        config['default_database'] = f'lib/db/{db_var.get()}'
+        save_config(config)
+        messagebox.showinfo(lang_dict.get("config_saved_title", "配置已保存"), lang_dict.get("config_saved_message", "配置已保存，请重启应用以应用更改。"))
+        config_window.destroy()
+
+    save_button = tk.Button(config_window, text=lang_dict.get("save_button", "保存"), command=save_config_changes)
+    save_button.pack(pady=20)
 
 # 初始化配置和语言
 config = load_config()
 language = config.get('language', 'en_us')
-lang_dict = load_language(f'./lang/{language}.xml')
+lang_dict = load_language(f'lib/lang/{language}.xml')
+database_path = config.get('default_database', 'lib/db/default_database.xml')
 
 # 初始化主窗口
 root = tk.Tk()
 root.title("Chem2Line")
 root.geometry("800x600")
-root.iconbitmap("nctl.ico")
+root.iconbitmap("lib/media/nctl.ico")
 
 # 创建菜单栏
 menu_bar = Menu(root)
@@ -264,6 +304,7 @@ root.config(menu=menu_bar)
 # 文件菜单
 file_menu = Menu(menu_bar, tearoff=0)
 file_menu.add_command(label=lang_dict.get("save_image", "保存键线式图像"), command=save_image)
+file_menu.add_command(label=lang_dict.get("config", "配置"), command=show_config_window)
 file_menu.add_separator()
 file_menu.add_command(label=lang_dict.get("exit", "退出"), command=root.quit)
 menu_bar.add_cascade(label=lang_dict.get("file", "文件"), menu=file_menu)
@@ -272,6 +313,14 @@ menu_bar.add_cascade(label=lang_dict.get("file", "文件"), menu=file_menu)
 database_menu = Menu(menu_bar, tearoff=0)
 database_menu.add_command(label=lang_dict.get("change_database", "更换数据库"), command=change_database)
 database_menu.add_command(label=lang_dict.get("database_info", "关于数据库"), command=show_database_info)
+
+# 常用数据库子菜单
+common_db_menu = Menu(database_menu, tearoff=0)
+for db_file in os.listdir('lib/db'):
+    if db_file.endswith('.xml'):
+        common_db_menu.add_command(label=db_file, command=lambda f=db_file: load_database_with_progress(f'lib/db/{f}'))
+database_menu.add_cascade(label=lang_dict.get("common_databases", "常用数据库"), menu=common_db_menu)
+
 menu_bar.add_cascade(label=lang_dict.get("database", "数据库"), menu=database_menu)
 
 # 关于菜单
@@ -280,15 +329,8 @@ about_menu.add_command(label=lang_dict.get("developer", "开发者"), command=sh
 about_menu.add_command(label=lang_dict.get("repository", "软件仓库"), command=show_repository)
 menu_bar.add_cascade(label=lang_dict.get("about", "关于"), menu=about_menu)
 
-# 语言菜单
-language_menu = Menu(menu_bar, tearoff=0)
-for lang in config['available_languages']:
-    lang_name = load_language(f'./lang/{lang}.xml').get("language_name", lang)
-    language_menu.add_command(label=lang_name, command=lambda l=lang: change_language(l))
-menu_bar.add_cascade(label=lang_dict.get("language", "语言"), menu=language_menu)
-
 # 加载 SMILES 数据库
-smiles_dict = load_smiles_database("default_database.xml")
+smiles_dict = load_smiles_database(database_path)
 
 # 创建输入框和标签
 input_label = tk.Label(root, text=lang_dict.get("input_label", "请输入化学式或 SMILES："), font=("Arial", 14))
