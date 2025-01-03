@@ -6,7 +6,7 @@ from ctlcore import load_smiles_database, get_smiles_options, formula_to_bondlin
 import time
 import threading
 
-VERSION = "1.0"
+VERSION = "1.1"
 DEVELOPER = "Ziyang-Bai"
 DATE = "2025-01-01"
 CORE_VERSION = core_version()
@@ -100,7 +100,7 @@ def load_database_with_progress():
     progress_window.title("加载数据库中")
     progress_window.geometry("300x100")
     progress_window.withdraw()  # 初始时隐藏窗口
-
+    progress_window.attributes("-toolwindow", 2)
     progress_label = tk.Label(progress_window, text="加载中，请稍候...", font=("Arial", 12))
     progress_label.pack(pady=10)
 
@@ -187,12 +187,37 @@ def show_about_developer():
 
 def show_repository():
     messagebox.showinfo("软件仓库", "GitHub: https://github.com/Ziyang-Bai/Chem2Line")
+def show_about_developer_with_icon():
+    # 创建关于窗口
+    about_window = tk.Toplevel(root)
+    about_window.title("关于开发者")
+    about_window.geometry("300x400")
 
+    # 加载图片
+    try:
+        icon_image = tk.PhotoImage(file="chem2line.png")  # 替换为图标的路径
+        icon_label = tk.Label(about_window, image=icon_image)
+        icon_label.image = icon_image  # 保存引用，防止被垃圾回收
+        icon_label.pack(pady=10)
+    except Exception as e:
+        tk.Label(about_window, text=f"无法加载图标: {e}").pack(pady=10)
+
+    # 添加文字信息
+    info_text = f"""
+    开发者: Ziyang-Bai
+    版本: 1.0
+    日期: 2025-01-01
+    内核版本: {CORE_VERSION}
+    """
+    info_label = tk.Label(about_window, text=info_text, font=("Arial", 12), justify="left")
+    info_label.pack(pady=10)
+
+    about_window.mainloop()
 # 初始化主窗口
 root = tk.Tk()
 root.title("Chem2Line")
 root.geometry("800x600")
-
+root.iconbitmap("nctl.ico")
 # 创建菜单栏
 menu_bar = Menu(root)
 root.config(menu=menu_bar)
@@ -214,6 +239,7 @@ menu_bar.add_cascade(label="数据库", menu=database_menu)
 about_menu = Menu(menu_bar, tearoff=0)
 about_menu.add_command(label="开发者", command=show_about_developer)
 about_menu.add_command(label="软件仓库", command=show_repository)
+
 menu_bar.add_cascade(label="关于", menu=about_menu)
 
 # 加载 SMILES 数据库
