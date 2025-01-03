@@ -1,0 +1,9 @@
+<config>
+    <language>zh_cn</language>
+    <available_languages>
+        <language>zh_cn</language>
+        <language>en_us</language>
+        <language>fr_fr</language>
+        <language>de_de</language>
+    </available_languages>
+</config>

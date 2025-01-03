@@ -1,0 +1,17 @@
+<language>
+    <input_label>Veuillez entrer une formule chimique ou SMILES :</input_label>
+    <submit_button>Générer Bondline</submit_button>
+    <save_image>Enregistrer l'image Bondline</save_image>
+    <exit>Quitter</exit>
+    <change_database>Changer de base de données</change_database>
+    <database_info>À propos de la base de données</database_info>
+    <developer>Développeur</developer>
+    <repository>Référentiel</repository>
+    <file>Fichier</file>
+    <database>Base de données</database>
+    <about>À propos</about>
+    <language>Langue</language>
+    <english>Anglais</english>
+    <chinese>Chinois</chinese>
+    <language_name>Français</language_name>
+</language>

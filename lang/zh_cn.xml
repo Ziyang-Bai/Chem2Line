@@ -1,0 +1,17 @@
+<language>
+    <input_label>请输入化学式或 SMILES：</input_label>
+    <submit_button>生成键线式</submit_button>
+    <save_image>保存键线式图像</save_image>
+    <exit>退出</exit>
+    <change_database>更换数据库</change_database>
+    <database_info>关于数据库</database_info>
+    <developer>开发者</developer>
+    <repository>软件仓库</repository>
+    <file>文件</file>
+    <database>数据库</database>
+    <about>关于</about>
+    <language>语言</language>
+    <english>英语</english>
+    <chinese>中文</chinese>
+    <language_name>中文</language_name>
+</language>

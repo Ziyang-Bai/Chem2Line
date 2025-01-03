@@ -44,31 +44,68 @@ ctlcore已在仓库中
 **5. 关于开发者**
 
 点击菜单栏中的“关于”>“开发者”，查看开发者信息和软件版本等。
+
+**6. 提交自己的语言文件**
+
+如果您希望为 Chem2Line 提交新的语言文件，请按照以下步骤操作：
+
+1. 在 `lang` 目录下创建一个新的 XML 文件，文件名为语言代码（例如 `fr_fr.xml`）。
+2. 在 XML 文件中定义界面文本的翻译，例如：
+    ```xml
+    <language>
+        <input_label>Veuillez entrer une formule chimique ou SMILES :</input_label>
+        <submit_button>Générer Bondline</submit_button>
+        <save_image>Enregistrer l'image Bondline</save_image>
+        <exit>Quitter</exit>
+        <change_database>Changer de base de données</change_database>
+        <database_info>À propos de la base de données</database_info>
+        <developer>Développeur</developer>
+        <repository>Référentiel</repository>
+        <file>Fichier</file>
+        <database>Base de données</database>
+        <about>À propos</about>
+        <language>Langue</language>
+        <english>Anglais</english>
+        <chinese>Chinois</chinese>
+    </language>
+    ```
+3. 在 `config.xml` 文件中添加新的语言代码，例如：
+    ```xml
+    <config>
+        <language>zh_cn</language>
+        <available_languages>
+            <language>zh_cn</language>
+            <language>en_us</language>
+            <language>fr_fr</language>
+        </available_languages>
+    </config>
+    ```
+4. 提交您的更改并创建一个 Pull Request。
+
 ## 改进
 
 1. __用户体验__
-	- 增加对无效化学式或 SMILES 的输入检查，并给出具体的错误提示。
-	- 支持最近使用的化学式或 SMILES 历史记录。
+    - 增加对无效化学式或 SMILES 的输入检查，并给出具体的错误提示。
+    - 支持最近使用的化学式或 SMILES 历史记录。
 2. __代码结构__
-	- 提取 GUI 逻辑为独立函数，进一步分离核心逻辑和用户界面逻辑。
-	- 使用多线程处理图像生成，避免主界面阻塞。
+    - 提取 GUI 逻辑为独立函数，进一步分离核心逻辑和用户界面逻辑。
+    - 使用多线程处理图像生成，避免主界面阻塞。
 3. __数据库扩展__
-	- 增加对更多数据库格式（如 JSON、CSV）的支持。
-	- 提供内置的默认化学式和 SMILES 示例。
+    - 增加对更多数据库格式（如 JSON、CSV）的支持。
+    - 提供内置的默认化学式和 SMILES 示例。
 4. __功能扩展__
-	- 增加 3D 分子可视化功能。
-	- 提供键线式的图像旋转和放大缩小功能。
-	- 支持导出为矢量图（SVG）。
+    - 增加 3D 分子可视化功能。
+    - 提供键线式的图像旋转和放大缩小功能。
+    - 支持导出为矢量图（SVG）。
 
 - __性能瓶颈__：对于较大的 XML 数据库文件，加载和解析可能会有延迟，优化文件读取方式或引入索引。
 - __依赖性问题__：需要确保用户安装了 RDKit 和其他依赖库。
 - __兼容性问题__：Tkinter 在某些系统上的表现可能受限，提供基于 Web 的交互界面版本。
 
-
-
 **许可证**
 
 该程序使用 Apache-2.0 许可证，请参考 LICENSE 文件获取更多信息。
+
 # 构建
 ## 预构建版本
 请在Github Releases 页面下载预构建版本。

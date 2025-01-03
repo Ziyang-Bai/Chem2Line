@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 from ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version
 import time
 import threading
+import xml.etree.ElementTree as ET
 
 VERSION = "1.1"
 DEVELOPER = "Ziyang-Bai"
@@ -46,6 +47,7 @@ def show_smiles_selection(smiles_list):
     for smiles in smiles_list:
         try:
             img = formula_to_bondline(smiles)
+            img = img.convert("RGBA")  # 确保图像以 RGBA 模式加载
             img = ImageTk.PhotoImage(img)
 
             frame = tk.Frame(scrollable_frame, pady=10)
@@ -213,47 +215,125 @@ def show_about_developer_with_icon():
     info_label.pack(pady=10)
 
     about_window.mainloop()
+
+# 加载配置文件
+def load_config():
+    try:
+        tree = ET.parse('./config.xml')
+        root = tree.getroot()
+        config = {child.tag: child.text for child in root if child.tag != 'available_languages'}
+        config['available_languages'] = [lang.text for lang in root.find('available_languages')]
+        return config
+    except Exception as e:
+        messagebox.showerror("配置错误", f"无法加载配置文件: {e}")
+        return {}
+
+# 保存配置文件
+def save_config(config):
+    try:
+        root = ET.Element("config")
+        for key, value in config.items():
+            if key == 'available_languages':
+                available_languages = ET.SubElement(root, 'available_languages')
+                for lang in value:
+                    lang_element = ET.SubElement(available_languages, 'language')
+                    lang_element.text = lang
+            else:
+                child = ET.SubElement(root, key)
+                child.text = value
+        tree = ET.ElementTree(root)
+        tree.write('./config.xml')
+    except Exception as e:
+        messagebox.showerror("配置错误", f"无法保存配置文件: {e}")
+
+# 加载语言文件
+def load_language(lang_file):
+    try:
+        tree = ET.parse(lang_file)
+        root = tree.getroot()
+        lang_dict = {child.tag: child.text for child in root}
+        return lang_dict
+    except Exception as e:
+        messagebox.showerror("语言错误", f"无法加载语言文件: {e}")
+        return {}
+
+# 更新界面语言
+def update_language(lang_dict):
+    input_label.config(text=lang_dict.get("input_label", "请输入化学式或 SMILES："))
+    submit_button.config(text=lang_dict.get("submit_button", "生成键线式"))
+    file_menu.entryconfig(0, label=lang_dict.get("save_image", "保存键线式图像"))
+    file_menu.entryconfig(2, label=lang_dict.get("exit", "退出"))
+    menu_bar.entryconfig(0, label=lang_dict.get("file", "文件"))
+    database_menu.entryconfig(0, label=lang_dict.get("change_database", "更换数据库"))
+    database_menu.entryconfig(1, label=lang_dict.get("database_info", "关于数据库"))
+    menu_bar.entryconfig(1, label=lang_dict.get("database", "数据库"))
+    about_menu.entryconfig(0, label=lang_dict.get("developer", "开发者"))
+    about_menu.entryconfig(1, label=lang_dict.get("repository", "软件仓库"))
+    menu_bar.entryconfig(2, label=lang_dict.get("about", "关于"))
+    language_menu.entryconfig(0, label=lang_dict.get("english", "English"))
+    language_menu.entryconfig(1, label=lang_dict.get("chinese", "中文"))
+    menu_bar.entryconfig(3, label=lang_dict.get("language", "语言"))
+
+# 切换语言
+def change_language(lang):
+    config['language'] = lang
+    save_config(config)
+    lang_dict = load_language(f'./lang/{lang}.xml')
+    update_language(lang_dict)
+
+# 初始化配置和语言
+config = load_config()
+language = config.get('language', 'en_us')
+lang_dict = load_language(f'./lang/{language}.xml')
+
 # 初始化主窗口
 root = tk.Tk()
 root.title("Chem2Line")
 root.geometry("800x600")
 root.iconbitmap("nctl.ico")
+
 # 创建菜单栏
 menu_bar = Menu(root)
 root.config(menu=menu_bar)
 
 # 文件菜单
 file_menu = Menu(menu_bar, tearoff=0)
-file_menu.add_command(label="保存键线式图像", command=save_image)
+file_menu.add_command(label=lang_dict.get("save_image", "保存键线式图像"), command=save_image)
 file_menu.add_separator()
-file_menu.add_command(label="退出", command=root.quit)
-menu_bar.add_cascade(label="文件", menu=file_menu)
+file_menu.add_command(label=lang_dict.get("exit", "退出"), command=root.quit)
+menu_bar.add_cascade(label=lang_dict.get("file", "文件"), menu=file_menu)
 
 # 数据库菜单
 database_menu = Menu(menu_bar, tearoff=0)
-database_menu.add_command(label="更换数据库", command=change_database)
-database_menu.add_command(label="关于数据库", command=show_database_info)
-menu_bar.add_cascade(label="数据库", menu=database_menu)
+database_menu.add_command(label=lang_dict.get("change_database", "更换数据库"), command=change_database)
+database_menu.add_command(label=lang_dict.get("database_info", "关于数据库"), command=show_database_info)
+menu_bar.add_cascade(label=lang_dict.get("database", "数据库"), menu=database_menu)
 
 # 关于菜单
 about_menu = Menu(menu_bar, tearoff=0)
-about_menu.add_command(label="开发者", command=show_about_developer)
-about_menu.add_command(label="软件仓库", command=show_repository)
+about_menu.add_command(label=lang_dict.get("developer", "开发者"), command=show_about_developer)
+about_menu.add_command(label=lang_dict.get("repository", "软件仓库"), command=show_repository)
+menu_bar.add_cascade(label=lang_dict.get("about", "关于"), menu=about_menu)
 
-menu_bar.add_cascade(label="关于", menu=about_menu)
+# 语言菜单
+language_menu = Menu(menu_bar, tearoff=0)
+for lang in config['available_languages']:
+    lang_dict = load_language(f'./lang/{lang}.xml')
+    language_menu.add_command(label=lang_dict.get("language_name", lang), command=lambda l=lang: change_language(l))
+menu_bar.add_cascade(label=lang_dict.get("language", "语言"), menu=language_menu)
 
 # 加载 SMILES 数据库
 smiles_dict = load_smiles_database("default_database.xml")
 
 # 创建输入框和标签
-input_label = tk.Label(root, text="请输入化学式或 SMILES：", font=("Arial", 14))
+input_label = tk.Label(root, text=lang_dict.get("input_label", "请输入化学式或 SMILES："), font=("Arial", 14))
 input_label.pack(pady=10)
 
 formula_entry = tk.Entry(root, font=("Arial", 14), width=30)
 formula_entry.pack(pady=10)
 
 # 创建提交按钮
-submit_button = tk.Button(root, text="生成键线式", font=("Arial", 14), command=on_submit)
+submit_button = tk.Button(root, text=lang_dict.get("submit_button", "生成键线式"), font=("Arial", 14), command=on_submit)
 submit_button.pack(pady=20)
 
 # 显示生成结果的标签
