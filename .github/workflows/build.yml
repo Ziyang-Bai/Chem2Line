@@ -28,7 +28,7 @@ jobs:
       run: |
         conda create --name build-env python=3.9 rdkit -c conda-forge --yes
         conda activate build-env
-        pip install -r requirements.txt --encoding utf-8
+        pip install pillow
 
     - name: Install pyinstaller
       run: pip install pyinstaller
