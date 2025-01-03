@@ -1,0 +1,43 @@
+name: Build CTLGUI Executable
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-activate-base: true
+
+    - name: Create and activate environment
+      run: |
+        conda create --name build-env python=3.9 rdkit -c conda-forge --yes
+        conda activate build-env
+        pip install -r requirements.txt
+
+    - name: Install pyinstaller
+      run: pip install pyinstaller
+
+    - name: Build executable
+      run: pyinstaller --onefile --windowed --icon=nctl.ico ctlgui.py
+
+    - name: Upload executable artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: CTLGUI-Executable
+        path: dist/ctlgui.exe
