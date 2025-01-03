@@ -24,13 +24,12 @@ jobs:
       with:
         auto-activate-base: true
 
-    - name: Create and activate Conda environment
+    - name: Create and activate environment
       run: |
-        conda create --name build-env python=3.9 rdkit -c conda-forge --yes
+        conda create --name build-env python=3.9 pillow rdkit -c conda-forge --yes
         conda activate build-env
-        pip install pillow
 
-    - name: Install pyinstaller
+    - name: Install dependencies
       run: |
         conda activate build-env
         pip install pyinstaller
@@ -38,13 +37,19 @@ jobs:
     - name: Build executable
       run: |
         conda activate build-env
-        pyinstaller --onefile --windowed --icon=nctl.ico --hidden-import=PIL ctlgui.py
+        pyinstaller --onefile --windowed \
+          --icon=nctl.ico \
+          --exclude-module tkinter.test \
+          --exclude-module unittest \
+          --exclude-module xml.parsers.expat \
+          ctlgui.py
 
-    - name: Verify executable
-      shell: cmd
+    - name: Compress executable with UPX
       run: |
-        if not exist dist\ctlgui.exe exit 1
-        echo "Executable file created successfully!"
+        conda activate build-env
+        curl -L https://github.com/upx/upx/releases/download/v4.0.2/upx-4.0.2-win64.zip -o upx.zip
+        tar -xf upx.zip
+        ./upx-4.0.2-win64/upx dist/ctlgui.exe
 
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
