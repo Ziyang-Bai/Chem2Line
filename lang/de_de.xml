@@ -30,9 +30,19 @@
     <database_changed_title>Datenbank geändert</database_changed_title>
     <current_database_info>Aktuelle Datenbankinformationen</current_database_info>
     <error_loading_database>Datenbank konnte nicht geladen werden</error_loading_database>
+    <loading_database_title>Datenbank wird geladen</loading_database_title>
+    <loading_database_message>Laden, bitte warten...</loading_database_message>
     <about_developer_title>Über den Entwickler</about_developer_title>
     <version>Version</version>
     <date>Datum</date>
     <core_version>Kernversion</core_version>
     <error_loading_icon>Symbol konnte nicht geladen werden</error_loading_icon>
+    <file_name>Dateiname</file_name>
+    <file_size>Größe</file_size>
+    <description>Beschreibung</description>
+    <publisher>Herausgeber</publisher>
+    <element_count>Elementanzahl</element_count>
+    <ok>OK</ok>
+    <select_smiles_title>SMILES auswählen</select_smiles_title>
+    <repository_title>Repository</repository_title>
 </language>

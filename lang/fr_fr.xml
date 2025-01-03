@@ -32,9 +32,19 @@
     <database_changed_title>Base de données changée</database_changed_title>
     <current_database_info>Informations actuelles sur la base de données</current_database_info>
     <error_loading_database>Impossible de charger la base de données</error_loading_database>
+    <loading_database_title>Chargement de la base de données</loading_database_title>
+    <loading_database_message>Chargement en cours, veuillez patienter...</loading_database_message>
     <about_developer_title>À propos du développeur</about_developer_title>
     <version>Version</version>
     <date>Date</date>
     <core_version>Version du noyau</core_version>
     <error_loading_icon>Impossible de charger l'icône</error_loading_icon>
+    <file_name>Nom du fichier</file_name>
+    <file_size>Taille</file_size>
+    <description>Description</description>
+    <publisher>Éditeur</publisher>
+    <element_count>Nombre d'éléments</element_count>
+    <ok>OK</ok>
+    <select_smiles_title>Sélectionner SMILES</select_smiles_title>
+    <repository_title>Référentiel</repository_title>
 </language>
