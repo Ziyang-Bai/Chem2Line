@@ -37,12 +37,13 @@ jobs:
     - name: Build executable
       run: |
         conda activate build-env
-        pyinstaller --onefile --windowed \
-          --icon=nctl.ico \
-          --exclude-module tkinter.test \
-          --exclude-module unittest \
-          --exclude-module xml.parsers.expat \
+        pyinstaller --onefile --windowed `
+          --icon=nctl.ico `
+          --exclude-module tkinter.test `
+          --exclude-module unittest `
+          --exclude-module xml.parsers.expat `
           ctlgui.py
+
 
     - name: Compress executable with UPX
       run: |
