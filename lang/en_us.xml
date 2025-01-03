@@ -32,9 +32,19 @@
     <database_changed_title>Database Changed</database_changed_title>
     <current_database_info>Current Database Information</current_database_info>
     <error_loading_database>Unable to load database</error_loading_database>
+    <loading_database_title>Loading Database</loading_database_title>
+    <loading_database_message>Loading, please wait...</loading_database_message>
     <about_developer_title>About Developer</about_developer_title>
     <version>Version</version>
     <date>Date</date>
     <core_version>Core Version</core_version>
     <error_loading_icon>Unable to load icon</error_loading_icon>
+    <file_name>File Name</file_name>
+    <file_size>Size</file_size>
+    <description>Description</description>
+    <publisher>Publisher</publisher>
+    <element_count>Element Count</element_count>
+    <ok>OK</ok>
+    <select_smiles_title>Select SMILES</select_smiles_title>
+    <repository_title>Repository</repository_title>
 </language>

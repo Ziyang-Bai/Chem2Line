@@ -6,7 +6,7 @@ from ctlcore import load_smiles_database, get_smiles_options, formula_to_bondlin
 import time
 import threading
 import xml.etree.ElementTree as ET
-
+database_path = "default_database.xml"
 VERSION = "1.1"
 DEVELOPER = "Ziyang-Bai"
 DATE = "2025-01-01"
@@ -19,8 +19,9 @@ def show_smiles_selection(smiles_list):
     :return: 用户选择的 SMILES
     """
     selection_window = tk.Toplevel()
-    selection_window.title("选择 SMILES 表示")
+    selection_window.title(f"Chem2Line - {lang_dict.get('select_smiles_title', '选择 SMILES 表示')}")
     selection_window.geometry("600x400")
+    selection_window.iconbitmap("nctl.ico")
 
     selected_smiles = tk.StringVar()
 
@@ -86,24 +87,27 @@ def load_database_with_progress():
                 progress_bar.start()  # 启动进度条
                 threading.Thread(target=update_progress).start()  # 启动进度条的后台更新
                 new_smiles_dict = load_smiles_database(file_path)
-                global smiles_dict
+                global smiles_dict, database_path
                 smiles_dict = new_smiles_dict  # 更新全局数据库
+                database_path = file_path  # 更新数据库路径
                 database_info = get_database_info(file_path)
-                messagebox.showinfo(lang_dict.get("database_changed_title", "数据库已更换"), f"{lang_dict.get('current_database_info', '当前数据库信息')}:\n{database_info}")
+                info_str = "\n".join([f"{lang_dict.get(key, key)}: {value}" for key, value in database_info.items()])
+                messagebox.showinfo(f"Chem2Line - {lang_dict.get('database_changed_title', '数据库已更换')}", f"{lang_dict.get('current_database_info', '当前数据库信息')}:\n{info_str}")
                 progress_bar.stop()  # 停止进度条
                 progress_window.withdraw()  # 隐藏进度条窗口
         except Exception as e:
-            messagebox.showerror(lang_dict.get("error_unknown_title", "未知错误"), f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_loading_database', '无法加载数据库')}: {e}")
+            messagebox.showerror(f"Chem2Line - {lang_dict.get('error_unknown_title', '未知错误')}", f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_loading_database', '无法加载数据库')}: {e}")
             progress_bar.stop()  # 停止进度条
             progress_window.withdraw()  # 隐藏进度条窗口
 
     # 创建一个新的进度条窗口
     progress_window = tk.Toplevel()
-    progress_window.title("加载数据库中")
+    progress_window.title(f"Chem2Line - {lang_dict.get('loading_database_title', '加载数据库中')}")
     progress_window.geometry("300x100")
+    progress_window.iconbitmap("nctl.ico")
     progress_window.withdraw()  # 初始时隐藏窗口
     progress_window.attributes("-toolwindow", 2)
-    progress_label = tk.Label(progress_window, text="加载中，请稍候...", font=("Arial", 12))
+    progress_label = tk.Label(progress_window, text=lang_dict.get("loading_database_message", "加载中，请稍候..."), font=("Arial", 12))
     progress_label.pack(pady=10)
 
     progress_bar = ttk.Progressbar(progress_window, orient="horizontal", length=250, mode="indeterminate")
@@ -111,11 +115,10 @@ def load_database_with_progress():
 
     threading.Thread(target=load_database).start()  # 启动加载数据库的后台线程
 
-
 def on_submit():
     input_text = formula_entry.get().strip()
     if not input_text:
-        messagebox.showwarning(lang_dict.get("input_empty_title", "输入为空"), lang_dict.get("input_empty_message", "请输入化学式或 SMILES"))
+        messagebox.showwarning(f"Chem2Line - {lang_dict.get('input_empty_title', '输入为空')}", lang_dict.get("input_empty_message", "请输入化学式或 SMILES"))
         return
 
     try:
@@ -140,37 +143,38 @@ def on_submit():
                 raise RuntimeError(f"无法生成键线式: {e}")
 
     except ValueError as e:
-        messagebox.showerror(lang_dict.get("error_not_found_title", "未找到结果"), f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_not_found_title', '未找到结果')}", f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
     except RuntimeError as e:
-        messagebox.showerror(lang_dict.get("error_generation_failed_title", "生成失败"), f"{lang_dict.get('error_code', '错误代码')}: 1002\n{str(e)}")
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_generation_failed_title', '生成失败')}", f"{lang_dict.get('error_code', '错误代码')}: 1002\n{str(e)}")
     except Exception as e:
-        messagebox.showerror(lang_dict.get("error_unknown_title", "未知错误"), f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_unknown_message', '发生未知错误')}: {e}")
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_unknown_title', '未知错误')}", f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_unknown_message', '发生未知错误')}: {e}")
 
 def save_image():
     if result_label.image:
         file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
         if file_path:
             result_label.image._PhotoImage__photo.write(file_path)
-            messagebox.showinfo("保存成功", f"键线式图像已保存到 {file_path}")
+            messagebox.showinfo(f"Chem2Line - {lang_dict.get('save_success_title', '保存成功')}", f"{lang_dict.get('save_success_message', '键线式图像已保存到')} {file_path}")
 
 def change_database():
     load_database_with_progress()  # 使用新的加载数据库方法
 
 def show_database_info():
-    info = get_database_info()
-    info_str = "\n".join([f"{key}: {value}" for key, value in info.items()])
-    messagebox.showinfo("数据库信息", info_str)
+    info = get_database_info(database_path)
+    info_str = "\n".join([f"{lang_dict.get(key, key)}: {value}" for key, value in info.items()])
+    messagebox.showinfo(f"Chem2Line - {lang_dict.get('database_info_title', '数据库信息')}", info_str)
 
 def show_about_developer():
-    messagebox.showinfo(lang_dict.get("about_developer_title", "关于开发者"), f"{lang_dict.get('developer', '开发者')}: {DEVELOPER}\n{lang_dict.get('version', '版本')}: {VERSION}\n{lang_dict.get('date', '日期')}: {DATE}\n{lang_dict.get('core_version', '内核版本')}: {CORE_VERSION}")
+    messagebox.showinfo(f"Chem2Line - {lang_dict.get('about_developer_title', '关于开发者')}", f"{lang_dict.get('developer', '开发者')}: {DEVELOPER}\n{lang_dict.get('version', '版本')}: {VERSION}\n{lang_dict.get('date', '日期')}: {DATE}\n{lang_dict.get('core_version', '内核版本')}: {CORE_VERSION}")
 
 def show_repository():
-    messagebox.showinfo("软件仓库", "GitHub: https://github.com/Ziyang-Bai/Chem2Line")
+    messagebox.showinfo(f"Chem2Line - {lang_dict.get('repository_title', '软件仓库')}", "GitHub: https://github.com/Ziyang-Bai/Chem2Line")
 def show_about_developer_with_icon():
     # 创建关于窗口
     about_window = tk.Toplevel(root)
-    about_window.title(lang_dict.get("about_developer_title", "关于开发者"))
+    about_window.title(f"Chem2Line - {lang_dict.get('about_developer_title', '关于开发者')}")
     about_window.geometry("300x400")
+    about_window.iconbitmap("nctl.ico")
 
     # 加载图片
     try:

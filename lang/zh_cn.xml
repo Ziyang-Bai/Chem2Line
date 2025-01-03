@@ -32,9 +32,19 @@
     <database_changed_title>数据库已更换</database_changed_title>
     <current_database_info>当前数据库信息</current_database_info>
     <error_loading_database>无法加载数据库</error_loading_database>
+    <loading_database_title>加载数据库中</loading_database_title>
+    <loading_database_message>加载中，请稍候...</loading_database_message>
     <about_developer_title>关于开发者</about_developer_title>
     <version>版本</version>
     <date>日期</date>
     <core_version>内核版本</core_version>
     <error_loading_icon>无法加载图标</error_loading_icon>
+    <file_name>文件名</file_name>
+    <file_size>大小</file_size>
+    <description>简介</description>
+    <publisher>发布者</publisher>
+    <element_count>元素量</element_count>
+    <ok>确定</ok>
+    <select_smiles_title>选择 SMILES 表示</select_smiles_title>
+    <repository_title>软件仓库</repository_title>
 </language>
