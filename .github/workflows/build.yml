@@ -24,17 +24,26 @@ jobs:
       with:
         auto-activate-base: true
 
-    - name: Create and activate environment
+    - name: Create and activate Conda environment
       run: |
         conda create --name build-env python=3.9 rdkit -c conda-forge --yes
         conda activate build-env
         pip install pillow
 
     - name: Install pyinstaller
-      run: pip install pyinstaller
+      run: |
+        conda activate build-env
+        pip install pyinstaller
 
     - name: Build executable
-      run: pyinstaller --onefile --windowed --icon=nctl.ico ctlgui.py
+      run: |
+        conda activate build-env
+        pyinstaller --onefile --windowed --icon=nctl.ico --hidden-import=PIL ctlgui.py
+
+    - name: Verify executable
+      run: |
+        if not exist dist\ctlgui.exe exit 1
+        echo "Executable file created successfully!"
 
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
