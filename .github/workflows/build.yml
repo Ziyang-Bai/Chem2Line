@@ -37,21 +37,12 @@ jobs:
     - name: Build executable
       run: |
         conda activate build-env
-        pyinstaller --onefile --windowed `
-          --icon=nctl.ico `
-          --exclude-module tkinter.test `
-          --exclude-module unittest `
-          --exclude-module xml.parsers.expat `
-          ctlgui.py
+        pyinstaller --onefile --windowed --icon=nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
 
-
-    - name: Compress executable with UPX
-      run: |
-        conda activate build-env
-        curl -L https://github.com/upx/upx/releases/download/v4.0.2/upx-4.0.2-win64.zip -o upx.zip
-        tar -xf upx.zip
-        ./upx-4.0.2-win64/upx dist/ctlgui.exe
-
+    # 跳过 UPX 压缩
+    - name: Skip UPX compression (if UPX fails)
+      run: echo "Skipping UPX compression due to errors."
+    
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
       with:
