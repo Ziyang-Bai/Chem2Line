@@ -62,7 +62,7 @@ def show_smiles_selection(smiles_list):
             label.pack()
 
         except Exception as e:
-            tk.Label(scrollable_frame, text=f"无法加载 {smiles}: {e}").pack()
+            tk.Label(scrollable_frame, text=f"{lang_dict.get('error_loading_smiles', '无法加载')} {smiles}: {e}").pack()
 
     # 等待用户选择
     selection_window.wait_window()
@@ -89,11 +89,11 @@ def load_database_with_progress():
                 global smiles_dict
                 smiles_dict = new_smiles_dict  # 更新全局数据库
                 database_info = get_database_info(file_path)
-                messagebox.showinfo("数据库已更换", f"当前数据库信息:\n{database_info}")
+                messagebox.showinfo(lang_dict.get("database_changed_title", "数据库已更换"), f"{lang_dict.get('current_database_info', '当前数据库信息')}:\n{database_info}")
                 progress_bar.stop()  # 停止进度条
                 progress_window.withdraw()  # 隐藏进度条窗口
         except Exception as e:
-            messagebox.showerror("未知错误", f"无法加载数据库: {e}")
+            messagebox.showerror(lang_dict.get("error_unknown_title", "未知错误"), f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_loading_database', '无法加载数据库')}: {e}")
             progress_bar.stop()  # 停止进度条
             progress_window.withdraw()  # 隐藏进度条窗口
 
@@ -113,42 +113,9 @@ def load_database_with_progress():
 
 
 def on_submit():
-    input_text = formula_entry.get().strip()  # 获取用户输入
-    smiles_list = get_smiles_options(input_text, smiles_dict)
-
-    if not smiles_list:
-        messagebox.showerror("错误", f"找不到 {input_text} 的 SMILES 表示。")
-    elif len(smiles_list) == 1:
-        selected_smiles = smiles_list[0]
-    else:
-        # 弹出选择窗口
-        selected_smiles = show_smiles_selection(smiles_list)
-
-    if selected_smiles:
-        try:
-            img = formula_to_bondline(selected_smiles)
-            img = ImageTk.PhotoImage(img)
-
-            result_label.config(image=img)
-            result_label.image = img  # 保存引用，防止被垃圾回收
-
-        except RuntimeError as e:
-            messagebox.showerror("错误", str(e))
-
-def save_image():
-    if result_label.image:
-        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
-        if file_path:
-            result_label.image._PhotoImage__photo.write(file_path)
-            messagebox.showinfo("保存成功", f"键线式图像已保存到 {file_path}")
-
-def change_database():
-    load_database_with_progress()  # 使用新的加载数据库方法
-
-def on_submit():
     input_text = formula_entry.get().strip()
     if not input_text:
-        messagebox.showwarning("输入为空", "请输入化学式或 SMILES")
+        messagebox.showwarning(lang_dict.get("input_empty_title", "输入为空"), lang_dict.get("input_empty_message", "请输入化学式或 SMILES"))
         return
 
     try:
@@ -173,11 +140,21 @@ def on_submit():
                 raise RuntimeError(f"无法生成键线式: {e}")
 
     except ValueError as e:
-        messagebox.showerror("未找到结果", str(e))
+        messagebox.showerror(lang_dict.get("error_not_found_title", "未找到结果"), f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
     except RuntimeError as e:
-        messagebox.showerror("生成失败", str(e))
+        messagebox.showerror(lang_dict.get("error_generation_failed_title", "生成失败"), f"{lang_dict.get('error_code', '错误代码')}: 1002\n{str(e)}")
     except Exception as e:
-        messagebox.showerror("未知错误", f"发生未知错误: {e}")
+        messagebox.showerror(lang_dict.get("error_unknown_title", "未知错误"), f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_unknown_message', '发生未知错误')}: {e}")
+
+def save_image():
+    if result_label.image:
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
+        if file_path:
+            result_label.image._PhotoImage__photo.write(file_path)
+            messagebox.showinfo("保存成功", f"键线式图像已保存到 {file_path}")
+
+def change_database():
+    load_database_with_progress()  # 使用新的加载数据库方法
 
 def show_database_info():
     info = get_database_info()
@@ -185,14 +162,14 @@ def show_database_info():
     messagebox.showinfo("数据库信息", info_str)
 
 def show_about_developer():
-    messagebox.showinfo("关于开发者", "开发者: " +  DEVELOPER + "\n版本: " + VERSION +"\n日期: " + DATE + "\n" + "内核版本: " + CORE_VERSION)
+    messagebox.showinfo(lang_dict.get("about_developer_title", "关于开发者"), f"{lang_dict.get('developer', '开发者')}: {DEVELOPER}\n{lang_dict.get('version', '版本')}: {VERSION}\n{lang_dict.get('date', '日期')}: {DATE}\n{lang_dict.get('core_version', '内核版本')}: {CORE_VERSION}")
 
 def show_repository():
     messagebox.showinfo("软件仓库", "GitHub: https://github.com/Ziyang-Bai/Chem2Line")
 def show_about_developer_with_icon():
     # 创建关于窗口
     about_window = tk.Toplevel(root)
-    about_window.title("关于开发者")
+    about_window.title(lang_dict.get("about_developer_title", "关于开发者"))
     about_window.geometry("300x400")
 
     # 加载图片
@@ -202,14 +179,14 @@ def show_about_developer_with_icon():
         icon_label.image = icon_image  # 保存引用，防止被垃圾回收
         icon_label.pack(pady=10)
     except Exception as e:
-        tk.Label(about_window, text=f"无法加载图标: {e}").pack(pady=10)
+        tk.Label(about_window, text=f"{lang_dict.get('error_loading_icon', '无法加载图标')}: {e}").pack(pady=10)
 
     # 添加文字信息
     info_text = f"""
-    开发者: Ziyang-Bai
-    版本: 1.0
-    日期: 2025-01-01
-    内核版本: {CORE_VERSION}
+    {lang_dict.get('developer', '开发者')}: {DEVELOPER}
+    {lang_dict.get('version', '版本')}: {VERSION}
+    {lang_dict.get('date', '日期')}: {DATE}
+    {lang_dict.get('core_version', '内核版本')}: {CORE_VERSION}
     """
     info_label = tk.Label(about_window, text=info_text, font=("Arial", 12), justify="left")
     info_label.pack(pady=10)
@@ -225,7 +202,7 @@ def load_config():
         config['available_languages'] = [lang.text for lang in root.find('available_languages')]
         return config
     except Exception as e:
-        messagebox.showerror("配置错误", f"无法加载配置文件: {e}")
+        messagebox.showerror(lang_dict.get("config_error_title", "配置错误"), f"{lang_dict.get('error_code', '错误代码')}: 2000\n{lang_dict.get('config_error_message', '无法加载配置文件')}: {e}")
         return {}
 
 # 保存配置文件
@@ -244,7 +221,7 @@ def save_config(config):
         tree = ET.ElementTree(root)
         tree.write('./config.xml')
     except Exception as e:
-        messagebox.showerror("配置错误", f"无法保存配置文件: {e}")
+        messagebox.showerror(lang_dict.get("config_error_title", "配置错误"), f"{lang_dict.get('error_code', '错误代码')}: 2001\n{lang_dict.get('config_save_error_message', '无法保存配置文件')}: {e}")
 
 # 加载语言文件
 def load_language(lang_file):
@@ -254,7 +231,7 @@ def load_language(lang_file):
         lang_dict = {child.tag: child.text for child in root}
         return lang_dict
     except Exception as e:
-        messagebox.showerror("语言错误", f"无法加载语言文件: {e}")
+        messagebox.showerror(lang_dict.get("language_error_title", "语言错误"), f"{lang_dict.get('error_code', '错误代码')}: 3000\n{lang_dict.get('language_error_message', '无法加载语言文件')}: {e}")
         return {}
 
 # 切换语言

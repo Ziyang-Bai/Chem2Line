@@ -16,4 +16,23 @@
     <language_name>Deutsch</language_name>
     <restart_title>Anwendung neu starten</restart_title>
     <restart_message>Die Sprache wurde geändert. Bitte starten Sie die Anwendung neu, um die Änderungen zu übernehmen.</restart_message>
+    <input_empty_title>Eingabe leer</input_empty_title>
+    <input_empty_message>Bitte geben Sie eine chemische Formel oder SMILES ein</input_empty_message>
+    <error_code>Fehlercode</error_code>
+    <error_not_found_title>Ergebnis nicht gefunden</error_not_found_title>
+    <error_generation_failed_title>Generierung fehlgeschlagen</error_generation_failed_title>
+    <error_unknown_title>Unbekannter Fehler</error_unknown_title>
+    <error_unknown_message>Ein unbekannter Fehler ist aufgetreten</error_unknown_message>
+    <config_error_title>Konfigurationsfehler</config_error_title>
+    <config_error_message>Konfigurationsdatei konnte nicht geladen werden</config_error_message>
+    <config_save_error_message>Konfigurationsdatei konnte nicht gespeichert werden</config_save_error_message>
+    <error_loading_smiles>Kann nicht geladen werden</error_loading_smiles>
+    <database_changed_title>Datenbank geändert</database_changed_title>
+    <current_database_info>Aktuelle Datenbankinformationen</current_database_info>
+    <error_loading_database>Datenbank konnte nicht geladen werden</error_loading_database>
+    <about_developer_title>Über den Entwickler</about_developer_title>
+    <version>Version</version>
+    <date>Datum</date>
+    <core_version>Kernversion</core_version>
+    <error_loading_icon>Symbol konnte nicht geladen werden</error_loading_icon>
 </language>

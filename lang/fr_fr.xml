@@ -16,4 +16,25 @@
     <language_name>Français</language_name>
     <restart_title>Redémarrer l'application</restart_title>
     <restart_message>La langue a été changée. Veuillez redémarrer l'application pour appliquer les modifications.</restart_message>
+    <input_empty_title>Entrée vide</input_empty_title>
+    <input_empty_message>Veuillez entrer une formule chimique ou SMILES</input_empty_message>
+    <error_code>Code d'erreur</error_code>
+    <error_not_found_title>Résultat non trouvé</error_not_found_title>
+    <error_generation_failed_title>Échec de la génération</error_generation_failed_title>
+    <error_unknown_title>Erreur inconnue</error_unknown_title>
+    <error_unknown_message>Une erreur inconnue s'est produite</error_unknown_message>
+    <config_error_title>Erreur de configuration</config_error_title>
+    <config_error_message>Impossible de charger le fichier de configuration</config_error_message>
+    <config_save_error_message>Impossible de sauvegarder le fichier de configuration</config_save_error_message>
+    <language_error_title>Erreur de langue</language_error_title>
+    <language_error_message>Impossible de charger le fichier de langue</language_error_message>
+    <error_loading_smiles>Impossible de charger</error_loading_smiles>
+    <database_changed_title>Base de données changée</database_changed_title>
+    <current_database_info>Informations actuelles sur la base de données</current_database_info>
+    <error_loading_database>Impossible de charger la base de données</error_loading_database>
+    <about_developer_title>À propos du développeur</about_developer_title>
+    <version>Version</version>
+    <date>Date</date>
+    <core_version>Version du noyau</core_version>
+    <error_loading_icon>Impossible de charger l'icône</error_loading_icon>
 </language>
