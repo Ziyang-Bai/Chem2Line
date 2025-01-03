@@ -41,6 +41,7 @@ jobs:
         pyinstaller --onefile --windowed --icon=nctl.ico --hidden-import=PIL ctlgui.py
 
     - name: Verify executable
+      shell: cmd
       run: |
         if not exist dist\ctlgui.exe exit 1
         echo "Executable file created successfully!"
