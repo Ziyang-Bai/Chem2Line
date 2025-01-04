@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 import os
 
 database_path = "lib/db/default_database.xml"
-VERSION = "1.1"
+VERSION = "1.3"
 DEVELOPER = "Ziyang-Bai"
 DATE = "2025-01-01"
 CORE_VERSION = core_version()
