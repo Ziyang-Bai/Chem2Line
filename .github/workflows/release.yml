@@ -1,0 +1,78 @@
+name: Release CTLGUI
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release'
+        required: true
+      release_name:
+        description: 'Release name'
+        required: true
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-activate-base: true
+
+    - name: Create and activate environment
+      run: |
+        conda create --name build-env python=3.9 pillow rdkit -c conda-forge --yes
+        conda activate build-env
+
+    - name: Install dependencies
+      run: |
+        conda activate build-env
+        pip install pyinstaller
+
+    - name: Build executable
+      run: |
+        conda activate build-env
+        pyinstaller --onefile --windowed --icon=nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
+
+    - name: Upload executable artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: CTLGUI-Executable
+        path: dist/ctlgui.exe
+
+    - name: Generate Release Notes
+      id: generate_release_notes
+      run: |
+        echo "## 更新内容" > release_notes.md
+        git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD >> release_notes.md
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.inputs.tag_name }}
+        release_name: ${{ github.event.inputs.release_name }}
+        body_path: ./release_notes.md
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: dist/ctlgui.exe
+        asset_name: ctlgui.exe
+        asset_content_type: application/octet-stream
