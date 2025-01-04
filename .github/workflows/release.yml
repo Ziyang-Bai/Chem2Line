@@ -48,7 +48,7 @@ jobs:
         mkdir dist/lib
         cp -r lib/* dist/lib/
         cd dist
-        zip -r windowsx64.zip ctlgui.exe lib/
+        Compress-Archive -Path ctlgui.exe, lib -DestinationPath windowsx64.zip
 
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
