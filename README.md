@@ -49,6 +49,46 @@ ctlcore已在仓库中
 
 点击菜单栏中的“数据库”>“更换数据库”，选择一个新的 XML 格式数据库。程序会自动加载数据库并显示加载进度。
 
+如果你希望能够快捷的调用常用的数据库，请将其放在`lib/db`目录下。默认数据库可通过`config.xml`或配置窗口进行更改。但必须在`lib/db`目录下。修改`config.xml`无此限制，但不推荐这么操作。
+
+**2.1. 数据库格式**
+
+数据库采用XML格式。标准格式如下。
+    ```xml
+    <smiles_database>
+        <!--name publisher description为可选元素-->
+        <name>标准数据库</name>
+        <publisher>Ziyang-Bai</publisher>
+        <description>这是一行备注</description>
+        <compound>
+            <!--name和cas也可以填写任意字符，但smiles和formula是必须的。-->
+            <name>苯</name>
+            <smiles>c1ccccc1</smiles>
+            <formula>C6H6</formula>
+            <cas>71-43-2</cas>
+        </compound>
+    </smiles_database>
+    ```
+你可以根据需要添加或删除元素。如果你有sdf格式的数据库，可以使用sdf_converter.py将其转换为xml格式。但是需要进行一些修改，具体请查看sdf_converter.py文件。
+
+**2.2. 下载已存在的数据库**
+
+这里有一些数据库供下载，你可以直接下载并方便的使用。
+| 数据库名称 | 下载地址 |
+|-----------|---------|
+| 默认数据库|[下载](https://github.com/Ziyang-Bai/Chem2Line/blob/main/lib/db/default_database.xml) |
+| PubChem含碳有机物|[下载](https://github.com/Ziyang-Bai/Chem2Line/blob/main/databases/pubchem_carbon.xml) |
+
+**2.3. 提交你的数据库**
+
+如果你有自己收集的数据库，并且希望分享给其他人，你可以按照以下步骤操作：
+
+1. 将你的数据库文件命名为 `your_database.xml` 
+
+2. 创建一个属于你的fork，并将你的数据库文件上传到`databases`目录下。
+
+3. 创建一个 Pull Request，将你的数据库文件合并到主仓库中。记得说明你的数据库名称和简介。
+
 **3. 保存键线式图像**
 
 点击菜单栏中的“文件”>“保存键线式图像”，选择保存位置并保存生成的键线式图像（PNG 格式）。
@@ -152,151 +192,3 @@ pip install pyinstaller
 pyinstaller --onefile --windowed --icon=ntcl.ico ctlgui.py
 ```
 这将使用你当前Python环境中的所有依赖项构建Chem2Line。
-
-# Chem2Line
-
-![GitHub stars](https://img.shields.io/github/stars/Ziyang-Bai/Chem2Line)
-![GitHub forks](https://img.shields.io/github/forks/Ziyang-Bai/Chem2Line)
-![GitHub issues](https://img.shields.io/github/issues/Ziyang-Bai/Chem2Line)
-![GitHub license](https://img.shields.io/github/license/Ziyang-Bai/Chem2Line)
-
-**Chem2Line** is a tool for converting chemical formulas or SMILES representations into bondline images. Users can input chemical formulas or SMILES, and the program will generate the corresponding chemical structure images. The program supports changing databases, displaying database information, and saving generated images.
-
-**Features**
-
-- **Chemical Formula to Bondline**: Users can input chemical formulas or SMILES representations, and the program will automatically generate the corresponding bondline images.
-- **Database Management**: Supports loading SMILES databases in XML format, changing databases, and viewing current database information.
-- **Save Images**: Allows saving generated bondline images in PNG format.
-- **About Developer**: Provides detailed information about the developer, software version, and core version.
-- **Progress Display**: Displays a progress bar when loading the database.
-- **Multilingual Support**: Supports Simplified Chinese, American English, French, and German.
-- **Error Codes**: Troubleshooting has never been easier!
-
-**Installation and Dependencies**
-
-This tool requires the following Python libraries:
-
-- tkinter: For creating graphical user interfaces.
-- PIL (or Pillow): For processing and displaying images.
-- ctlcore: Custom core library containing operations related to chemical structures.
-
-```bash
-pip install pillow
-pip install tk
-```
-
-ctlcore is included in the repository.
-
-**Usage**
-
-**1. Start the Program**
-
-After running the program, a main interface will be displayed where you can input chemical formulas or SMILES representations and click the "Generate Bondline" button to view the results.
-
-**2. Change Database**
-
-Click "Database" > "Change Database" in the menu bar, and select a new XML format database. The program will automatically load the database and display the loading progress.
-
-**3. Save Bondline Image**
-
-Click "File" > "Save Bondline Image" in the menu bar, choose a save location, and save the generated bondline image (PNG format).
-
-**4. View Database Information**
-
-Click "Database" > "About Database" in the menu bar, and the program will display the current database information.
-
-**5. About Developer**
-
-Click "About" > "Developer" in the menu bar to view information about the developer and software version.
-
-**6. Submit Your Own Language File**
-
-If you wish to submit a new language file for Chem2Line, please follow these steps:
-
-1. Create a new XML file in the `lang` directory, named after the language code (e.g., `fr_fr.xml`).
-2. Define the translations for the interface text in the XML file, for example:
-    ```xml
-    <language>
-        <input_label>Please enter a chemical formula or SMILES:</input_label>
-        <submit_button>Generate Bondline</submit_button>
-        <save_image>Save Bondline Image</save_image>
-        <exit>Exit</exit>
-        <change_database>Change Database</change_database>
-        <database_info>About Database</database_info>
-        <developer>Developer</developer>
-        <repository>Repository</repository>
-        <file>File</file>
-        <database>Database</database>
-        <about>About</about>
-        <language>Language</language>
-        <english>English</english>
-        <chinese>Chinese</chinese>
-    </language>
-    ```
-3. Add the new language code to the `config.xml` file, for example:
-    ```xml
-    <config>
-        <language>en_us</language>
-        <available_languages>
-            <language>zh_cn</language>
-            <language>en_us</language>
-            <language>fr_fr</language>
-        </available_languages>
-    </config>
-    ```
-4. Submit your changes and create a Pull Request.
-
-## Error Codes
-
-During usage, you may encounter the following error codes:
-
-- **1000**: Unknown error
-- **1001**: Result not found
-- **1002**: Generation failed
-- **2000**: Configuration load error
-- **2001**: Configuration save error
-- **3000**: Language load error
-
-## Improvements
-
-1. __User Experience__
-    - Add input validation for invalid chemical formulas or SMILES and provide specific error messages.
-    - Support history of recently used chemical formulas or SMILES.
-2. __Code Structure__
-    - Extract GUI logic into independent functions to further separate core logic from user interface logic.
-    - Use multithreading to handle image generation and avoid blocking the main interface.
-3. __Database Expansion__
-    - Add support for more database formats (e.g., JSON, CSV).
-    - Provide built-in default chemical formulas and SMILES examples.
-4. __Feature Expansion__
-    - Add 3D molecular visualization.
-    - Provide image rotation and zooming for bondline images.
-    - Support exporting to vector graphics (SVG).
-
-- __Performance Bottleneck__: Loading and parsing large XML database files may have delays. Optimize file reading methods or introduce indexing.
-- __Dependency Issues__: Ensure users have installed RDKit and other dependencies.
-- __Compatibility Issues__: Tkinter's performance may be limited on some systems. Provide a web-based interactive interface version.
-
-**License**
-
-This program uses the Apache-2.0 license. Please refer to the LICENSE file for more information.
-
-# Build
-## Pre-built Versions
-Please download pre-built versions from the GitHub Releases page.
-## GitHub Action Quick Build
-After cloning your GitHub repository, you can use GitHub Action Quick Build to build your program.
-Simply click the "Actions" button at the top right of the repository, then select the "Build CTLGUI Executable" workflow. Run the workflow or make a new commit, then wait for the build to complete.
-Once the build is complete, you can find the generated executable file on the "Actions" page.
-## Manual Build
-Alternatively, you can manually build your program using the following commands:
-```bash
-git clone https://github.com/Ziyang-Bai/Chem2Line.git
-cd Chem2Line
-pip install --upgrade pip wheel
-pip install -r requirements.txt
-pip install rdkit-pypi
-pip install pyinstaller
-pyinstaller --onefile --windowed --icon=ntcl.ico ctlgui.py
-```
-This will build Chem2Line using all dependencies in your current Python environment.

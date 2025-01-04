@@ -73,6 +73,7 @@ jobs:
         body: |
           ## What's New?
           ${{ steps.generate_release_notes.outputs.release_notes }}
+          See submission for details.
         draft: false
         prerelease: false
   
