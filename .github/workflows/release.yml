@@ -46,7 +46,7 @@ jobs:
     - name: Package executable and lib folder
       run: |
         mkdir dist/lib
-        cp -r path/to/lib/* dist/lib/
+        cp -r lib/* dist/lib/
         cd dist
         zip -r windowsx64.zip ctlgui.exe lib/
 
