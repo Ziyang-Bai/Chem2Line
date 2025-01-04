@@ -56,7 +56,7 @@ jobs:
     - name: Build executable
       run: |
         conda activate build-env
-        pyinstaller --onefile --windowed --icon=$(pwd)/lib/media/nctl.ico ctlgui.py
+        pyinstaller --onefile --windowed --icon=nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
 
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
