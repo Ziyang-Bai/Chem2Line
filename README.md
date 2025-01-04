@@ -1,5 +1,5 @@
 <div align="center">
-<p><img style="width:200px; height:200px;" src="https://github.com/Ziyang-Bai/Chem2Line/blob/main/nctl.png?raw=true" alt=""></p>
+<p><img style="width:200px; height:200px;" src="https://github.com/Ziyang-Bai/Chem2Line/blob/main/lib/media/nctl.png?raw=true" alt=""></p>
 <h2>Chem2Line</h2>
 <p>在你的电脑生成有机物的键线式！</p>
 <p><em>Generate key line formulas for organics at your computer!</em></p>
