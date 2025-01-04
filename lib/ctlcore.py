@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem import AllChem
-CORE_VERSION = "1.0"
+CORE_VERSION = "1.1"
 def core_version():
     return CORE_VERSION
 def load_smiles_database(file="default_database.xml"):
