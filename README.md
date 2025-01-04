@@ -194,3 +194,6 @@ pip install pyinstaller
 pyinstaller --onefile --windowed --icon=ntcl.ico ctlgui.py
 ```
 这将使用你当前Python环境中的所有依赖项构建Chem2Line。
+
+# 错误报告/联系
+创建一个Issue即可报告错误，或使用Telegram群组亦可[![Join Telegram Channel](https://img.shields.io/badge/Telegram-Chem2Line-2CA5E0?logo=telegram)](https://t.me/Chem2Line)
