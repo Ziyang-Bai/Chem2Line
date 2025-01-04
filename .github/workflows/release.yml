@@ -43,16 +43,23 @@ jobs:
         conda activate build-env
         pyinstaller --onefile --windowed --icon=nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
 
+    - name: Package executable and lib folder
+      run: |
+        mkdir dist/lib
+        cp -r path/to/lib/* dist/lib/
+        cd dist
+        zip -r windowsx64.zip ctlgui.exe lib/
+
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
       with:
         name: CTLGUI-Executable
-        path: dist/ctlgui.exe
+        path: dist/windowsx64.zip
 
     - name: Generate Release Notes
       id: generate_release_notes
       run: |
-        echo "## 更新内容" > release_notes.md
+        echo "## What's New?" > release_notes.md
         git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD >> release_notes.md
 
     - name: Create Release
@@ -73,6 +80,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/ctlgui.exe
-        asset_name: ctlgui.exe
-        asset_content_type: application/octet-stream
+        asset_path: dist/windowsx64.zip
+        asset_name: windowsx64.zip
+        asset_content_type: application/zip
