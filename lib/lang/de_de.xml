@@ -1,0 +1,50 @@
+<language>
+    <input_label>Bitte geben Sie eine chemische Formel oder SMILES ein:</input_label>
+    <submit_button>Bondline generieren</submit_button>
+    <save_image>Bondline-Bild speichern</save_image>
+    <exit>Beenden</exit>
+    <change_database>Datenbank wechseln</change_database>
+    <database_info>Über die Datenbank</database_info>
+    <developer>Entwickler</developer>
+    <repository>Repository</repository>
+    <file>Datei</file>
+    <database>Datenbank</database>
+    <about>Über</about>
+    <language>Sprache</language>
+    <english>Englisch</english>
+    <chinese>Chinesisch</chinese>
+    <language_name>Deutsch</language_name>
+    <restart_title>Anwendung neu starten</restart_title>
+    <restart_message>Die Sprache wurde geändert. Bitte starten Sie die Anwendung neu, um die Änderungen zu übernehmen.</restart_message>
+    <input_empty_title>Eingabe leer</input_empty_title>
+    <input_empty_message>Bitte geben Sie eine chemische Formel oder SMILES ein</input_empty_message>
+    <error_code>Fehlercode</error_code>
+    <error_not_found_title>Ergebnis nicht gefunden</error_not_found_title>
+    <error_generation_failed_title>Generierung fehlgeschlagen</error_generation_failed_title>
+    <error_unknown_title>Unbekannter Fehler</error_unknown_title>
+    <error_unknown_message>Ein unbekannter Fehler ist aufgetreten</error_unknown_message>
+    <config_error_title>Konfigurationsfehler</config_error_title>
+    <config_error_message>Konfigurationsdatei konnte nicht geladen werden</config_error_message>
+    <config_save_error_message>Konfigurationsdatei konnte nicht gespeichert werden</config_save_error_message>
+    <error_loading_smiles>Kann nicht geladen werden</error_loading_smiles>
+    <database_changed_title>Datenbank geändert</database_changed_title>
+    <current_database_info>Aktuelle Datenbankinformationen</current_database_info>
+    <error_loading_database>Datenbank konnte nicht geladen werden</error_loading_database>
+    <loading_database_title>Datenbank wird geladen</loading_database_title>
+    <loading_database_message>Laden, bitte warten...</loading_database_message>
+    <about_developer_title>Über den Entwickler</about_developer_title>
+    <version>Version</version>
+    <date>Datum</date>
+    <core_version>Kernversion</core_version>
+    <error_loading_icon>Symbol konnte nicht geladen werden</error_loading_icon>
+    <file_name>Dateiname</file_name>
+    <file_size>Größe</file_size>
+    <description>Beschreibung</description>
+    <publisher>Herausgeber</publisher>
+    <element_count>Elementanzahl</element_count>
+    <ok>OK</ok>
+    <select_smiles_title>SMILES auswählen</select_smiles_title>
+    <repository_title>Repository</repository_title>
+    <config_window_title>Konfigurationsfenster</config_window_title>
+    <config_window_message>Bitte konfigurieren Sie die Anwendungseinstellungen</config_window_message>
+</language>

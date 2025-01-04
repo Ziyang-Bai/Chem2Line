@@ -1,0 +1,56 @@
+<language>
+    <input_label>请输入化学式或 SMILES：</input_label>
+    <submit_button>生成键线式</submit_button>
+    <save_image>保存键线式图像</save_image>
+    <exit>退出</exit>
+    <change_database>更换数据库</change_database>
+    <database_info>关于数据库</database_info>
+    <developer>开发者</developer>
+    <repository>软件仓库</repository>
+    <file>文件</file>
+    <database>数据库</database>
+    <about>关于</about>
+    <language>语言</language>
+    <english>英语</english>
+    <chinese>中文</chinese>
+    <language_name>中文</language_name>
+    <restart_title>重启应用</restart_title>
+    <restart_message>语言已更改，请重启应用以应用更改。</restart_message>
+    <input_empty_title>输入为空</input_empty_title>
+    <input_empty_message>请输入化学式或 SMILES</input_empty_message>
+    <error_code>错误代码</error_code>
+    <error_not_found_title>未找到结果</error_not_found_title>
+    <error_generation_failed_title>生成失败</error_generation_failed_title>
+    <error_unknown_title>未知错误</error_unknown_title>
+    <error_unknown_message>发生未知错误</error_unknown_message>
+    <config_error_title>配置错误</config_error_title>
+    <config_error_message>无法加载配置文件</config_error_message>
+    <config_save_error_message>无法保存配置文件</config_save_error_message>
+    <language_error_title>语言错误</language_error_title>
+    <language_error_message>无法加载语言文件</language_error_message>
+    <error_loading_smiles>无法加载</error_loading_smiles>
+    <database_changed_title>数据库已更换</database_changed_title>
+    <current_database_info>当前数据库信息</current_database_info>
+    <error_loading_database>无法加载数据库</error_loading_database>
+    <loading_database_title>加载数据库中</loading_database_title>
+    <loading_database_message>加载中，请稍候...</loading_database_message>
+    <about_developer_title>关于开发者</about_developer_title>
+    <version>版本</version>
+    <date>日期</date>
+    <core_version>内核版本</core_version>
+    <error_loading_icon>无法加载图标</error_loading_icon>
+    <file_name>文件名</file_name>
+    <file_size>大小</file_size>
+    <description>简介</description>
+    <publisher>发布者</publisher>
+    <element_count>元素量</element_count>
+    <ok>确定</ok>
+    <select_smiles_title>选择 SMILES 表示</select_smiles_title>
+    <repository_title>软件仓库</repository_title>
+    <config_title>配置</config_title>
+    <select_language>选择语言：</select_language>
+    <select_database>选择默认数据库：</select_database>
+    <config_saved_title>配置已保存</config_saved_title>
+    <config_saved_message>配置已保存，请重启应用以应用更改。</config_saved_message>
+    <save_button>保存</save_button>
+</language>
