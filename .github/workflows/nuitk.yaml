@@ -1,0 +1,40 @@
+name: Build EXE using Nuitka
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install nuitka
+        pip install rdkit
+        pip install pillow
+        pip install pyqt5
+
+    - name: Compile cltgui.py to EXE
+      run: |
+        python -m nuitka --standalone --onefile --include-module=lib.ctlcore --include-module=rdkit --include-module=os --include-module=xml.etree.ElementTree --include-module=tkinter --include-module=PIL --include-module=time --include-module=threading --output-dir=dist cltgui.py
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cltgui-exe
+        path: dist/cltgui.exe
