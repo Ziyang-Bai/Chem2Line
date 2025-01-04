@@ -11,6 +11,7 @@
 ![GitHub forks](https://img.shields.io/github/forks/Ziyang-Bai/Chem2Line)
 ![GitHub issues](https://img.shields.io/github/issues/Ziyang-Bai/Chem2Line)
 ![GitHub license](https://img.shields.io/github/license/Ziyang-Bai/Chem2Line)
+[![Build CTLGUI Executable](https://github.com/Ziyang-Bai/Chem2Line/actions/workflows/build.yml/badge.svg)](https://github.com/Ziyang-Bai/Chem2Line/actions/workflows/build.yml)
 
 **Chem2Line** 是一个用于将化学式或 SMILES 表示转换为键线式图像的工具。用户可以输入化学式或 SMILES，程序将生成相应的化学结构图像。程序支持更换数据库、显示数据库信息，以及保存生成的图像。
 
