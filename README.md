@@ -54,6 +54,7 @@ ctlcore已在仓库中
 **2.1. 数据库格式**
 
 数据库采用XML格式。标准格式如下。
+
     ```xml
     <smiles_database>
         <!--name publisher description为可选元素-->
@@ -69,6 +70,7 @@ ctlcore已在仓库中
         </compound>
     </smiles_database>
     ```
+    
 你可以根据需要添加或删除元素。如果你有sdf格式的数据库，可以使用sdf_converter.py将其转换为xml格式。但是需要进行一些修改，具体请查看sdf_converter.py文件。
 
 **2.2. 下载已存在的数据库**
