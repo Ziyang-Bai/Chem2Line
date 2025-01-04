@@ -44,7 +44,7 @@ jobs:
     - name: Build executable
       run: |
         conda activate build-env
-        pyinstaller --onefile --windowed --icon=nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
+        pyinstaller --onefile --windowed --icon=./lib/media/nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
 
     # Skip UPX compression
     - name: Skip UPX compression (if UPX fails)
