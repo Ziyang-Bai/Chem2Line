@@ -4,14 +4,12 @@ on:
   push:
     branches:
       - main
-    # Trigger the workflow only when Python files are changed
     paths:
-      - '**/*.py'  # Monitor all Python files in the repository
+      - '**/*.py'
   pull_request:
-    # Trigger on pull requests but only for Python files
     paths:
-      - '**/*.py'  # Monitor all Python files in the repository
-  workflow_dispatch:  # Allows manual triggering of the workflow
+      - '**/*.py'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -41,15 +39,25 @@ jobs:
         conda activate build-env
         pip install pyinstaller
 
+    - name: Print working directory and list files
+      run: |
+        echo "Current working directory:"
+        pwd
+        echo "Listing files in lib/media:"
+        ls -la ./lib/media
+
+    - name: Check icon file permissions
+      run: |
+        if [ ! -r "./lib/media/nctl.ico" ]; then
+          echo "Icon file is not readable."
+          exit 1
+        fi
+
     - name: Build executable
       run: |
         conda activate build-env
-        pyinstaller --onefile --windowed --icon=./lib/media/nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
+        pyinstaller --onefile --windowed --icon=$(pwd)/lib/media/nctl.ico ctlgui.py
 
-    # Skip UPX compression
-    - name: Skip UPX compression (if UPX fails)
-      run: echo "Skipping UPX compression due to errors."
-    
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
       with:
