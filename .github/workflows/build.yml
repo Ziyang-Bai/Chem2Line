@@ -39,20 +39,6 @@ jobs:
         conda activate build-env
         pip install pyinstaller
 
-    - name: Print working directory and list files
-      run: |
-        echo "Current working directory:"
-        pwd
-        echo "Listing files in lib/media:"
-        ls -la ./lib/media
-
-    - name: Check icon file permissions
-      run: |
-        if [ ! -r "./lib/media/nctl.ico" ]; then
-          echo "Icon file is not readable."
-          exit 1
-        fi
-
     - name: Build executable
       run: |
         conda activate build-env
