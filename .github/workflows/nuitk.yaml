@@ -29,12 +29,12 @@ jobs:
         pip install pillow
         pip install pyqt5
 
-    - name: Compile cltgui.py to EXE
+    - name: Compile ctlgui.py to EXE
       run: |
-        python -m nuitka --standalone --onefile --enable-plugin=tk-inter --include-module=lib.ctlcore --include-module=rdkit --include-module=os --include-module=xml.etree.ElementTree --include-module=tkinter --include-module=PIL --include-module=time --include-module=threading --output-dir=dist cltgui.py
+        python -m nuitka --standalone --onefile --enable-plugin=tk-inter --include-module=lib.ctlcore --include-module=rdkit --include-module=os --include-module=xml.etree.ElementTree --include-module=tkinter --include-module=PIL --include-module=time --include-module=threading --output-dir=dist ctlgui.py
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: cltgui-exe
-        path: dist/cltgui.exe
+        name: ctlgui-exe
+        path: dist/ctlgui.exe
