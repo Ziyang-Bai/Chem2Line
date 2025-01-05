@@ -38,6 +38,8 @@ jobs:
         script-name: ctlgui.py
         windows-icon-from-ico: lib/media/nctl.ico
         enable-plugins: tk-inter
+      env:
+        NUITKA_OUTPUT_DIR: ctlgui.dist
 
     - name: List build directory
       run: dir ctlgui.dist
@@ -45,13 +47,13 @@ jobs:
     - name: Check build directory contents
       run: |
         echo "Checking contents of ctlgui.dist"
-        dir ctlgui.dist
+        dir ./build/ctlgui.dist
 
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
       with:
         name: CTLGUI-Executable
-        path: ctlgui.dist/**
+        path: build/ctlgui.dist/**
         if-no-files-found: warn
         include-hidden-files: false
       env:
