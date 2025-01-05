@@ -5,6 +5,8 @@
 <p><em>Generate key line formulas for organics at your computer!</em></p>
 </div>
 
+[中文版](README.md) | [English Version](README-English.md) | [Français Version](README-French.md)
+
 # Chem2Line
 
 ![GitHub stars](https://img.shields.io/github/stars/Ziyang-Bai/Chem2Line)
