@@ -17,7 +17,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -48,11 +47,18 @@ jobs:
         echo "Checking contents of ctlgui.dist"
         dir ./build/ctlgui.dist
 
+    - name: Package executable and lib folder
+      run: |
+        mkdir build/ctlgui.dist/lib
+        cp -r lib/* build/ctlgui.dist/lib/
+        cd build/ctlgui.dist
+        Compress-Archive -Path ctlgui.exe, lib, *.dll, *.pyd, *.so, *.dylib -DestinationPath Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
+
     - name: Upload executable artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: CTLGUI-Executable
-        path: build/ctlgui.dist/**
+        path: build/ctlgui.dist/Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
         if-no-files-found: warn
         include-hidden-files: false
 
@@ -70,7 +76,7 @@ jobs:
       with:
         tag_name: ${{ github.event.inputs.tag_name }}
         release_name: ${{ github.event.inputs.release_name }}
-        body: ${{ steps.generate_release_notes.outputs.release_notes }}
+        body_path: release_notes.md
         draft: false
         prerelease: false
 
@@ -80,6 +86,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/ctlgui.dist/windowsx64.zip
-        asset_name: windowsx64.zip
+        asset_path: build/ctlgui.dist/Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
+        asset_name: Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
         asset_content_type: application/zip
