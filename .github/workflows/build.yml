@@ -39,7 +39,7 @@ jobs:
         windows-icon-from-ico: lib/media/nctl.ico
         enable-plugins: tk-inter
       env:
-        NUITKA_OUTPUT_DIR: ctlgui.dist
+        NUITKA_OUTPUT_DIR: build/ctlgui.dist
 
     - name: List build directory
       run: dir ctlgui.dist
