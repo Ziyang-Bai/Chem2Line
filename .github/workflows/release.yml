@@ -23,38 +23,38 @@ jobs:
       with:
         python-version: 3.9
 
-    - name: Install Miniconda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        auto-activate-base: true
-
-    - name: Create and activate environment
-      run: |
-        conda create --name build-env python=3.9 pillow rdkit -c conda-forge --yes
-        conda activate build-env
-
     - name: Install dependencies
       run: |
-        conda activate build-env
-        pip install pyinstaller
+        python -m venv build-env
+        build-env\Scripts\activate
+        python -m pip install --upgrade pip wheel
+        pip install rdkit
 
-    - name: Build executable
-      run: |
-        conda activate build-env
-        pyinstaller --onefile --windowed --icon=nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
+    - name: Build executable with Nuitka
+      uses: Nuitka/Nuitka-Action@main
+      with:
+        nuitka-version: main
+        script-name: ctlgui.py
+        windows-icon-from-ico: lib/media/nctl.ico
+        enable-plugins: tk-inter
+      env:
+        NUITKA_OUTPUT_DIR: build/ctlgui.dist
 
-    - name: Package executable and lib folder
+    - name: List build directory
+      run: dir ./build
+
+    - name: Check build directory contents
       run: |
-        mkdir dist/lib
-        cp -r lib/* dist/lib/
-        cd dist
-        Compress-Archive -Path ctlgui.exe, lib -DestinationPath windowsx64.zip
+        echo "Checking contents of ctlgui.dist"
+        dir ./build/ctlgui.dist
 
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
       with:
         name: CTLGUI-Executable
-        path: dist/windowsx64.zip
+        path: build/ctlgui.dist/**
+        if-no-files-found: warn
+        include-hidden-files: false
 
     - name: Generate Release Notes
       id: generate_release_notes
@@ -70,19 +70,16 @@ jobs:
       with:
         tag_name: ${{ github.event.inputs.tag_name }}
         release_name: ${{ github.event.inputs.release_name }}
-        body: |
-          ## What's New?
-          ${{ steps.generate_release_notes.outputs.release_notes }}
-          See submission for details.
+        body: ${{ steps.generate_release_notes.outputs.release_notes }}
         draft: false
         prerelease: false
-  
+
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/windowsx64.zip
+        asset_path: build/ctlgui.dist/windowsx64.zip
         asset_name: windowsx64.zip
         asset_content_type: application/zip
