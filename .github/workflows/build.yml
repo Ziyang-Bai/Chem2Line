@@ -28,7 +28,7 @@ jobs:
       run: |
         python -m venv build-env
         build-env\Scripts\activate
-        pip install --upgrade pip wheel
+        python -m pip install --upgrade pip wheel
         pip install rdkit
 
     - name: Build executable with Nuitka
@@ -36,7 +36,7 @@ jobs:
       with:
         nuitka-version: main
         script-name: ctlgui.py
-        windows-icon-from-ico: nctl.ico
+        windows-icon-from-ico: lib/media/nctl.ico
         enable-plugins: tk-inter
 
     - name: Upload executable artifact
