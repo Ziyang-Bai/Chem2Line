@@ -42,7 +42,7 @@ jobs:
         NUITKA_OUTPUT_DIR: build/ctlgui.dist
 
     - name: List build directory
-      run: dir ./build/ctlgui.dist
+      run: dir ./build
 
     - name: Check build directory contents
       run: |
