@@ -39,8 +39,26 @@ jobs:
         windows-icon-from-ico: lib/media/nctl.ico
         enable-plugins: tk-inter
 
+    - name: List build directory
+      run: dir ctlgui.dist
+
+    - name: Check build directory contents
+      run: |
+        echo "Checking contents of ctlgui.dist"
+        dir ctlgui.dist
+
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
       with:
         name: CTLGUI-Executable
-        path: ctlgui.dist
+        path: ctlgui.dist/**
+        if-no-files-found: warn
+        include-hidden-files: false
+      env:
+        pythonLocation: C:\hostedtoolcache\windows\Python\3.9.13\x64
+        PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.9.13\x64/lib/pkgconfig
+        Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.9.13\x64
+        Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.9.13\x64
+        Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.9.13\x64
+        NUITKA_CACHE_DIR: D:\a\_actions\Nuitka\Nuitka-Action\main/nuitka/cache
+        PYTHON_VERSION: 3.9
