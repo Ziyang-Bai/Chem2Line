@@ -188,11 +188,14 @@ ctlcore已在仓库中
 ```bash
 git clone https://github.com/Ziyang-Bai/Chem2Line.git
 cd Chem2Line
+python -m venv myenv
+myenv\Scripts\activate  # 在 Windows 上
+# source myenv/bin/activate  # 在 macOS 和 Linux 上
 pip install --upgrade pip wheel
 pip install -r requirements.txt
-pip install rdkit-pypi
-pip install pyinstaller
-pyinstaller --onefile --windowed --icon=ntcl.ico ctlgui.py
+pip install rdkit
+pip install nuitka
+nuitka --standalone --enable-plugin=tkinter --windows-icon-from-ico=nctl.ico ctlgui.py
 ```
 这将使用你当前Python环境中的所有依赖项构建Chem2Line。
 

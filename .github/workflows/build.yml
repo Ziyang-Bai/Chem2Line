@@ -24,28 +24,23 @@ jobs:
       with:
         python-version: 3.9
 
-    - name: Install Miniconda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        auto-activate-base: true
-
-    - name: Create and activate environment
-      run: |
-        conda create --name build-env python=3.9 pillow rdkit -c conda-forge --yes
-        conda activate build-env
-
     - name: Install dependencies
       run: |
-        conda activate build-env
-        pip install pyinstaller
+        python -m venv build-env
+        build-env\Scripts\activate
+        pip install --upgrade pip wheel
+        pip install rdkit
 
-    - name: Build executable
-      run: |
-        conda activate build-env
-        pyinstaller --onefile --windowed --icon=nctl.ico --exclude-module tkinter.test --exclude-module unittest --exclude-module xml.parsers.expat ctlgui.py
+    - name: Build executable with Nuitka
+      uses: Nuitka/Nuitka-Action@main
+      with:
+        nuitka-version: main
+        script-name: ctlgui.py
+        windows-icon-from-ico: nctl.ico
+        enable-plugins: tk-inter
 
     - name: Upload executable artifact
       uses: actions/upload-artifact@v3
       with:
         name: CTLGUI-Executable
-        path: dist/ctlgui.exe
+        path: ctlgui.dist
