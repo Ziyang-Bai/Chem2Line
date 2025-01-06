@@ -30,6 +30,7 @@ jobs:
         build-env\Scripts\activate
         python -m pip install --upgrade pip wheel
         pip install rdkit
+        pip install pillow  # Add this line to install PIL (Pillow)
 
     - name: Build executable with Nuitka
       uses: Nuitka/Nuitka-Action@main
