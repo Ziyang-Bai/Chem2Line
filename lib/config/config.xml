@@ -1,1 +1,1 @@
-<config><language>zh_cn</language><available_languages><language>zh_cn</language><language>en_us</language><language>fr_fr</language><language>de_de</language></available_languages><default_database>lib/db/pubchem_carbon.xml</default_database></config>
+<config><language>zh_cn</language><available_languages><language>zh_cn</language><language>en_us</language><language>fr_fr</language><language>de_de</language></available_languages><default_database>lib/db/default_database.xml</default_database></config>

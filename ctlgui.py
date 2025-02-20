@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, Scrollbar, Canvas, Menu, ttk, Toplevel, StringVar, OptionMenu
 from PIL import Image, ImageTk
-from lib.ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version
+from lib.ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version, show_3d_viewer
 import time
 import threading
 import xml.etree.ElementTree as ET
@@ -143,8 +143,12 @@ def on_submit():
 
                 result_label.config(image=img)
                 result_label.image = img
+
+                # 显示3D视图按钮
+                view_3d_button.config(state=tk.NORMAL, command=lambda: show_3d_viewer(selected_smiles))
+
             except Exception as e:
-                raise RuntimeError(f"无法生成键线式: {e}")
+                raise RuntimeError(f"无法生成图像: {e}")
 
     except ValueError as e:
         messagebox.showerror(f"Chem2Line - {lang_dict.get('error_not_found_title', '未找到结果')}", f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
@@ -158,7 +162,7 @@ def save_image():
         file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
         if file_path:
             result_label.image._PhotoImage__photo.write(file_path)
-            messagebox.showinfo(f"Chem2Line - {lang_dict.get('save_success_title', '保存成功')}", f"{lang_dict.get('save_success_message', '键线式图像已保存到')} {file_path}")
+            messagebox.showinfo(f"Chem2Line - {lang_dict.get('save_success_title', '保存成功')}", f"{lang_dict.get('save_success_message', '图像已保存到')} {file_path}")
 
 def change_database():
     load_database_with_progress()  # 使用新的加载数据库方法
@@ -239,8 +243,12 @@ def load_language(lang_file):
         lang_dict = {child.tag: child.text for child in root}
         return lang_dict
     except Exception as e:
-        messagebox.showerror(lang_dict.get("language_error_title", "语言错误"), f"{lang_dict.get('error_code', '错误代码')}: 3000\n{lang_dict.get('language_error_message', '无法加载语言文件')}: {e}")
-        return {}
+        # 返回一个默认的空字典
+        return {
+            "language_error_title": "语言错误",
+            "error_code": "错误代码",
+            "language_error_message": "无法加载语言文件"
+        }
 
 # 切换语言
 def change_language(lang):
@@ -297,17 +305,24 @@ root.title("Chem2Line")
 root.geometry("800x600")
 root.iconbitmap("lib/media/nctl.ico")
 
+output_type = StringVar(value="bondline")
+
 # 创建菜单栏
 menu_bar = Menu(root)
 root.config(menu=menu_bar)
 
 # 文件菜单
 file_menu = Menu(menu_bar, tearoff=0)
-file_menu.add_command(label=lang_dict.get("save_image", "保存键线式图像"), command=save_image)
+file_menu.add_command(label=lang_dict.get("save_image", "保存图像"), command=save_image)
 file_menu.add_command(label=lang_dict.get("config", "配置"), command=show_config_window)
 file_menu.add_separator()
 file_menu.add_command(label=lang_dict.get("exit", "退出"), command=root.quit)
 menu_bar.add_cascade(label=lang_dict.get("file", "文件"), menu=file_menu)
+
+# 输出菜单
+output_menu = Menu(menu_bar, tearoff=0)
+output_menu.add_radiobutton(label=lang_dict.get("bondline_output", "键线式输出"), variable=output_type, value="bondline")
+menu_bar.add_cascade(label=lang_dict.get("output", "输出"), menu=output_menu)
 
 # 数据库菜单
 database_menu = Menu(menu_bar, tearoff=0)
@@ -342,6 +357,10 @@ formula_entry.pack(pady=10)
 # 创建提交按钮
 submit_button = tk.Button(root, text=lang_dict.get("submit_button", "生成键线式"), font=("Arial", 14), command=on_submit)
 submit_button.pack(pady=20)
+
+# 创建显示3D视图按钮
+view_3d_button = tk.Button(root, text=lang_dict.get("view_3d_button", "显示3D视图"), font=("Arial", 14), state=tk.DISABLED)
+view_3d_button.pack(pady=10)
 
 # 显示生成结果的标签
 result_label = tk.Label(root)
