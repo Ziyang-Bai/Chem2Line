@@ -48,6 +48,7 @@ class Debugger:
         tk.Button(control_frame, text="Dead", command=self.freeze_program).pack(side=tk.LEFT, padx=5)
         tk.Button(control_frame, text="Error", command=self.simulate_error).pack(side=tk.LEFT, padx=5)
         tk.Button(control_frame, text="Show variables", command=self.show_variables).pack(side=tk.LEFT, padx=5)
+        tk.Button(control_frame, text="Call Function", command=self.call_function).pack(side=tk.LEFT, padx=5)
 
     def freeze_program(self):
         self.root.after(100, self.root.quit)
@@ -63,6 +64,15 @@ class Debugger:
     def show_variables(self):
         var_info = "\n".join([f"{var_name}: {var_value}" for var_name, var_value in self.globals_dict.items()])
         messagebox.showinfo("Variables", var_info)
+
+    def call_function(self):
+        func_name = simpledialog.askstring("Call Function", "Enter function name:")
+        if func_name and func_name in self.globals_dict:
+            try:
+                result = self.globals_dict[func_name]()
+                messagebox.showinfo("Function Result", f"Result: {result}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to call function: {e}")
 
 def enable_debug_mode(root, globals_dict):
     Debugger(root, globals_dict)

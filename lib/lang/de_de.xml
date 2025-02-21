@@ -47,4 +47,20 @@
     <repository_title>Repository</repository_title>
     <config_window_title>Konfigurationsfenster</config_window_title>
     <config_window_message>Bitte konfigurieren Sie die Anwendungseinstellungen</config_window_message>
+    <molecule_analysis>Molekülanalyse</molecule_analysis>
+    <error_invalid_smiles>Struktur aus SMILES nicht ableitbar, bitte geben Sie eine korrekte SMILES-Darstellung an</error_invalid_smiles>
+    <error_occurred>Ein Fehler ist aufgetreten</error_occurred>
+    <molecular_weight>Molekulargewicht</molecular_weight>
+    <num_atoms>Anzahl der Atome</num_atoms>
+    <num_bonds>Anzahl der Bindungen</num_bonds>
+    <num_rings>Anzahl der Ringe</num_rings>
+    <molecular_formula>Molekularformel</molecular_formula>
+    <3d_molecule_viewer>3D Molekülbetrachter</3d_molecule_viewer>
+    <reset_view>Ansicht zurücksetzen</reset_view>
+    <zoom_in>Vergrößern</zoom_in>
+    <zoom_out>Verkleinern</zoom_out>
+    <perspective_increase>Perspektive erhöhen</perspective_increase>
+    <perspective_decrease>Perspektive verringern</perspective_decrease>
+    <overlay>Überlagerung</overlay>
+    <overlay_force_field>Kraftfeld</overlay_force_field>
 </language>

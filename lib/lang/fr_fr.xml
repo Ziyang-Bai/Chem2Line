@@ -53,4 +53,20 @@
     <config_saved_title>Configuration enregistrée</config_saved_title>
     <config_saved_message>La configuration a été enregistrée. Veuillez redémarrer l'application pour appliquer les modifications.</config_saved_message>
     <save_button>Enregistrer</save_button>
+    <molecule_analysis>Analyse de molécule</molecule_analysis>
+    <error_invalid_smiles>Impossible de déduire la structure à partir de SMILES, veuillez fournir une représentation SMILES correcte</error_invalid_smiles>
+    <error_occurred>Une erreur s'est produite</error_occurred>
+    <molecular_weight>Poids moléculaire</molecular_weight>
+    <num_atoms>Nombre d'atomes</num_atoms>
+    <num_bonds>Nombre de liaisons</num_bonds>
+    <num_rings>Nombre d'anneaux</num_rings>
+    <molecular_formula>Formule moléculaire</molecular_formula>
+    <3d_molecule_viewer>Visualiseur de molécule 3D</3d_molecule_viewer>
+    <reset_view>Réinitialiser la vue</reset_view>
+    <zoom_in>Zoom avant</zoom_in>
+    <zoom_out>Zoom arrière</zoom_out>
+    <perspective_increase>Augmenter la perspective</perspective_increase>
+    <perspective_decrease>Diminuer la perspective</perspective_decrease>
+    <overlay>Superposition</overlay>
+    <overlay_force_field>Champ de force</overlay_force_field>
 </language>
