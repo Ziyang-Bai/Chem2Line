@@ -22,11 +22,14 @@
 
 - **化学式转键线式**：用户可以输入化学式或 SMILES 表示，程序将自动生成对应的键线式图像。
 - **数据库管理**：支持加载 XML 格式的 SMILES 数据库，可以更换数据库，查看当前数据库信息。
-- **保存图像**：可以将生成的键线式图像保存为 PNG 格式。
+- **保存图像**：可以将生成的键线式图像保存为 PNG 或 SVG 格式。
 - **关于开发者**：提供开发者信息、软件版本及内核版本等详细介绍。
 - **进度显示**：在加载数据库时显示进度条。
 - **多语言支持**：支持简体中文，美式英语，法语，德语。
 - **错误代码**：解决问题从未如此简单！
+- **3D分子视图**: 纯纯自研，空间极小，资源极少，能用就行。
+- **历史记录**: 我刚刚查了啥来着？
+- **力场优化**: 虽然位置不太对头。
 
 **安装与依赖**
 
@@ -34,14 +37,13 @@
 
 - tkinter：用于创建图形用户界面。
 - PIL（或 Pillow）：用于处理和显示图像。
-- ctlcore：自定义核心库，包含与化学结构相关的操作。
+- rdkit：用于化学信息学操作。
 
 ```bash
 pip install pillow
 pip install tk
+pip install rdkit
 ```
-
-ctlcore已在仓库中
 
 **使用方法**
 
@@ -59,21 +61,21 @@ ctlcore已在仓库中
 
 数据库采用XML格式。标准格式如下。
 
-    ```xml
-    <smiles_database>
-        <!--name publisher description为可选元素-->
-        <name>标准数据库</name>
-        <publisher>Ziyang-Bai</publisher>
-        <description>这是一行备注</description>
-        <compound>
-            <!--name和cas也可以填写任意字符，但smiles和formula是必须的。-->
-            <name>苯</name>
-            <smiles>c1ccccc1</smiles>
-            <formula>C6H6</formula>
-            <cas>71-43-2</cas>
-        </compound>
-    </smiles_database>
-    ```
+```xml
+<smiles_database>
+    <!--name publisher description为可选元素-->
+    <name>标准数据库</name>
+    <publisher>Ziyang-Bai</publisher>
+    <description>这是一行备注</description>
+    <compound>
+        <!--name和cas也可以填写任意字符，但smiles和formula是必须的。-->
+        <name>苯</name>
+        <smiles>c1ccccc1</smiles>
+        <formula>C6H6</formula>
+        <cas>71-43-2</cas>
+    </compound>
+</smiles_database>
+```
     
 你可以根据需要添加或删除元素。如果你有sdf格式的数据库，可以使用sdf_converter.py将其转换为xml格式。但是需要进行一些修改，具体请查看sdf_converter.py文件。
 
@@ -97,7 +99,7 @@ ctlcore已在仓库中
 
 **3. 保存键线式图像**
 
-点击菜单栏中的“文件”>“保存键线式图像”，选择保存位置并保存生成的键线式图像（PNG 格式）。
+点击菜单栏中的“文件”>“保存图像”>“保存为PNG”或“保存为SVG”，选择保存位置并保存生成的键线式图像。
 
 **4. 查看数据库信息**
 
@@ -198,7 +200,7 @@ pip install --upgrade pip wheel
 pip install -r requirements.txt
 pip install rdkit
 pip install nuitka
-nuitka --standalone --enable-plugin=tkinter --windows-icon-from-ico=nctl.ico ctlgui.py
+python -m nuitka --standalone --onefile --enable-plugin=tk-inter --windows-icon-from-ico=lib/media/nctl.ico --output-dir=dist --follow-imports --include-data-files=lib/media/*=lib/media/ --remove-output --show-progress --lto=yes --jobs=16 --windows-console-mode=disable c:/Users/Danie/Documents/GitHub/Chem2Line/ctlgui.py
 ```
 这将使用你当前Python环境中的所有依赖项构建Chem2Line。
 
