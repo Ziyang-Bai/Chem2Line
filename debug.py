@@ -49,6 +49,7 @@ class Debugger:
         tk.Button(control_frame, text="Error", command=self.simulate_error).pack(side=tk.LEFT, padx=5)
         tk.Button(control_frame, text="Show variables", command=self.show_variables).pack(side=tk.LEFT, padx=5)
         tk.Button(control_frame, text="Call Function", command=self.call_function).pack(side=tk.LEFT, padx=5)
+        tk.Button(control_frame, text="Refresh", command=self.update_var_list).pack(side=tk.LEFT, padx=5)
 
     def freeze_program(self):
         self.root.after(100, self.root.quit)
