@@ -10,9 +10,10 @@ import os
 import sys
 from debug import enable_debug_mode  # 导入调试模块
 from rdkit import Chem  # 添加此行以导入 Chem
+from rdkit.Chem import Draw
 
 database_path = "lib/db/default_database.xml"
-VERSION = "1.3"
+VERSION = "1.4.1"
 DEVELOPER = "Ziyang-Bai"
 DATE = "2025-01-01"
 CORE_VERSION = core_version()
@@ -333,12 +334,45 @@ def on_analyze():
     except Exception as e:
         messagebox.showerror(f"Chem2Line - {lang_dict.get('error_unknown_title', '未知错误')}", f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_unknown_message', '发生未知错误')}: {e}")
 
-def save_image():
+def save_image_as_png():
     if result_label.image:
         file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
         if file_path:
             result_label.image._PhotoImage__photo.write(file_path)
             messagebox.showinfo(f"Chem2Line - {lang_dict.get('save_success_title', '保存成功')}", f"{lang_dict.get('save_success_message', '图像已保存到')} {file_path}")
+
+def save_image_as_svg():
+    input_text = formula_entry.get().strip()
+    if not input_text:
+        messagebox.showwarning(f"Chem2Line - {lang_dict.get('input_empty_title', '输入为空')}", lang_dict.get("input_empty_message", "请输入化学式或 SMILES"))
+        return
+
+    try:
+        smiles_list = get_smiles_options(input_text, smiles_dict)
+        if not smiles_list:
+            raise ValueError(f"找不到 {input_text} 的 SMILES 表示，请检查输入或更换数据库")
+
+        if len(smiles_list) == 1:
+            selected_smiles = smiles_list[0]
+        else:
+            selected_smiles = show_smiles_selection(smiles_list)
+
+        if selected_smiles:
+            mol = Chem.MolFromSmiles(selected_smiles)
+            if mol is None:
+                raise ValueError(f"无效的SMILES字符串: {selected_smiles}")
+
+            file_path = filedialog.asksaveasfilename(defaultextension=".svg", filetypes=[("SVG files", "*.svg")])
+            if file_path:
+                Draw.MolToFile(mol, file_path, imageType="svg")
+                messagebox.showinfo(f"Chem2Line - {lang_dict.get('save_success_title', '保存成功')}", f"{lang_dict.get('save_success_message', '图像已保存到')} {file_path}")
+
+    except ValueError as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_not_found_title', '未找到结果')}", f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
+    except RuntimeError as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_generation_failed_title', '生成失败')}", f"{lang_dict.get('error_code', '错误代码')}: 1002\n{str(e)}")
+    except Exception as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_unknown_title', '未知错误')}", f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_unknown_message', '发生未知错误')}: {e}")
 
 def change_database():
     load_database_with_progress()  # 使用新的加载数据库方法
@@ -493,7 +527,10 @@ root.config(menu=menu_bar)
 
 # 文件菜单
 file_menu = Menu(menu_bar, tearoff=0)
-file_menu.add_command(label=lang_dict.get("save_image", "保存图像"), command=save_image)
+save_image_menu = Menu(file_menu, tearoff=0)
+save_image_menu.add_command(label=lang_dict.get("save_as_png", "保存为PNG"), command=save_image_as_png)
+save_image_menu.add_command(label=lang_dict.get("save_as_svg", "保存为SVG"), command=save_image_as_svg)
+file_menu.add_cascade(label=lang_dict.get("save_image", "保存图像"), menu=save_image_menu)
 file_menu.add_command(label=lang_dict.get("config", "配置"), command=show_config_window)
 file_menu.add_separator()
 file_menu.add_command(label=lang_dict.get("view_long_history", "历史记录"), command=show_long_history)

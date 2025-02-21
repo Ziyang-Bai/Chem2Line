@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import Canvas
 import numpy as np
 
-CORE_VERSION = "1.1"
+CORE_VERSION = "1.2.1"
 
 def core_version():
     return CORE_VERSION
