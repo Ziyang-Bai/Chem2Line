@@ -53,4 +53,20 @@
     <config_saved_title>Configuration Saved</config_saved_title>
     <config_saved_message>Configuration has been saved. Please restart the application to apply the changes.</config_saved_message>
     <save_button>Save</save_button>
+    <molecule_analysis>Molecule Analysis</molecule_analysis>
+    <error_invalid_smiles>Unable to deduce structure from SMILES, please provide a correct SMILES representation</error_invalid_smiles>
+    <error_occurred>An error occurred</error_occurred>
+    <molecular_weight>Molecular Weight</molecular_weight>
+    <num_atoms>Number of Atoms</num_atoms>
+    <num_bonds>Number of Bonds</num_bonds>
+    <num_rings>Number of Rings</num_rings>
+    <molecular_formula>Molecular Formula</molecular_formula>
+    <3d_molecule_viewer>3D Molecule Viewer</3d_molecule_viewer>
+    <reset_view>Reset View</reset_view>
+    <zoom_in>Zoom In</zoom_in>
+    <zoom_out>Zoom Out</zoom_out>
+    <perspective_increase>Increase Perspective</perspective_increase>
+    <perspective_decrease>Decrease Perspective</perspective_decrease>
+    <overlay>Overlay</overlay>
+    <overlay_force_field>Force Field</overlay_force_field>
 </language>

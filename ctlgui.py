@@ -2,19 +2,129 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, Scrollbar, Canvas, Menu, ttk, Toplevel, StringVar, OptionMenu
 from PIL import Image, ImageTk
-from lib.ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version, show_3d_viewer
+from lib.ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version, show_3d_viewer, analyze_molecule, overlay_force_field, get_chemical_info, show_chemical_info
 import time
 import threading
 import xml.etree.ElementTree as ET
 import os
 import sys
 from debug import enable_debug_mode  # 导入调试模块
+from rdkit import Chem  # 添加此行以导入 Chem
 
 database_path = "lib/db/default_database.xml"
 VERSION = "1.3"
 DEVELOPER = "Ziyang-Bai"
 DATE = "2025-01-01"
 CORE_VERSION = core_version()
+
+history = []
+history_file = "lib/history.xml"
+
+def load_history():
+    """
+    从 XML 文件加载历史记录
+    """
+    if not os.path.exists(history_file):
+        return []
+
+    tree = ET.parse(history_file)
+    root = tree.getroot()
+    history = []
+    for entry in root.findall("entry"):
+        smiles = entry.find("smiles").text
+        timestamp = entry.find("timestamp").text
+        input_text = entry.find("input_text").text
+        history.append({"smiles": smiles, "timestamp": timestamp, "input_text": input_text})
+    return history
+
+def save_history():
+    """
+    将历史记录保存到 XML 文件
+    """
+    root = ET.Element("history")
+    for entry in history:
+        entry_element = ET.SubElement(root, "entry")
+        smiles_element = ET.SubElement(entry_element, "smiles")
+        smiles_element.text = entry["smiles"]
+        timestamp_element = ET.SubElement(entry_element, "timestamp")
+        timestamp_element.text = entry["timestamp"]
+        input_text_element = ET.SubElement(entry_element, "input_text")
+        input_text_element.text = entry["input_text"]
+    tree = ET.ElementTree(root)
+    tree.write(history_file)
+
+def add_to_history(smiles):
+    """
+    添加SMILES到历史记录
+    :param smiles: SMILES 表示
+    """
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    input_text = formula_entry.get().strip()
+    if smiles not in [entry["smiles"] for entry in history]:
+        history.append({"smiles": smiles, "timestamp": timestamp, "input_text": input_text})
+        update_history_menu()
+        save_history()
+
+def update_history_menu():
+    """
+    更新历史记录菜单
+    """
+    history_menu.delete(0, tk.END)
+    for entry in history[-5:]:
+        history_menu.add_command(label=entry["smiles"], command=lambda s=entry["smiles"]: formula_entry.insert(0, s))
+
+def show_long_history():
+    """
+    显示长历史记录窗口，使用 Windows 原生的窗口方式，并允许排序和即时删除
+    """
+    history_window = Toplevel(root)
+    history_window.title(lang_dict.get("history_title", "历史记录"))
+    history_window.geometry("600x400")
+    history_window.iconbitmap("lib/media/nctl.ico")
+
+    columns = ("timestamp", "input_text", "smiles")
+    tree = ttk.Treeview(history_window, columns=columns, show="headings")
+    tree.heading("timestamp", text=lang_dict.get("timestamp", "时间戳"))
+    tree.heading("input_text", text=lang_dict.get("input_text", "输入文本"))
+    tree.heading("smiles", text="SMILES")
+
+    for entry in history:
+        tree.insert("", "end", values=(entry["timestamp"], entry["input_text"], entry["smiles"]))
+
+    tree.pack(fill="both", expand=True)
+
+    def delete_selected():
+        selected_items = tree.selection()
+        for item in selected_items:
+            item_values = tree.item(item, "values")
+            entry_to_delete = next((entry for entry in history if entry["timestamp"] == item_values[0] and entry["input_text"] == item_values[1] and entry["smiles"] == item_values[2]), None)
+            if entry_to_delete:
+                history.remove(entry_to_delete)
+                tree.delete(item)
+        save_history()
+        update_history_menu()
+
+    delete_button = tk.Button(history_window, text=lang_dict.get("delete", "删除"), command=delete_selected)
+    delete_button.pack(pady=10)
+
+    clear_button = tk.Button(history_window, text=lang_dict.get("clear_history", "清空历史记录"), command=clear_history)
+    clear_button.pack(pady=10)
+
+def delete_history_entry(entry):
+    """
+    删除历史记录条目
+    """
+    history.remove(entry)
+    save_history()
+    update_history_menu()
+
+def clear_history():
+    """
+    清空历史记录
+    """
+    history.clear()
+    save_history()
+    update_history_menu()
 
 def show_smiles_selection(smiles_list):
     """
@@ -72,6 +182,38 @@ def show_smiles_selection(smiles_list):
     # 等待用户选择
     selection_window.wait_window()
     return selected_smiles.get()
+def on_overlay_force_field():
+    input_text = formula_entry.get().strip()
+    if not input_text:
+        messagebox.showwarning(f"Chem2Line - {lang_dict.get('input_empty_title', '输入为空')}", lang_dict.get("input_empty_message", "请输入化学式或 SMILES"))
+        return
+
+    try:
+        smiles_list = get_smiles_options(input_text, smiles_dict)
+
+        if not smiles_list:
+            raise ValueError(f"{lang_dict.get('error_not_found', '找不到')} {input_text} {lang_dict.get('smiles_representation', '的 SMILES 表示，请检查输入或更换数据库')}")
+
+        if len(smiles_list) == 1:
+            selected_smiles = smiles_list[0]
+        else:
+            selected_smiles = show_smiles_selection(smiles_list)
+
+        if selected_smiles:
+            mol = Chem.MolFromSmiles(selected_smiles)
+            mol = Chem.AddHs(mol)  # 添加显式氢原子
+            img = overlay_force_field(mol)
+            img = ImageTk.PhotoImage(img)
+
+            result_label.config(image=img)
+            result_label.image = img
+
+    except ValueError as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_not_found_title', '未找到结果')}", f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
+    except RuntimeError as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_generation_failed_title', '生成失败')}", f"{lang_dict.get('error_code', '错误代码')}: 1002\n{str(e)}")
+    except Exception as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_unknown_title', '未知错误')}", f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_unknown_message', '发生未知错误')}: {e}")
 
 def load_database_with_progress(file_path=None):
     """
@@ -148,9 +290,41 @@ def on_submit():
 
                 # 显示3D视图按钮
                 view_3d_button.config(state=tk.NORMAL, command=lambda: show_3d_viewer(selected_smiles))
+                analyze_button.config(state=tk.NORMAL)
+                add_to_history(selected_smiles)
 
             except Exception as e:
                 raise RuntimeError(f"无法生成图像: {e}")
+
+    except ValueError as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_not_found_title', '未找到结果')}", f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
+    except RuntimeError as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_generation_failed_title', '生成失败')}", f"{lang_dict.get('error_code', '错误代码')}: 1002\n{str(e)}")
+    except Exception as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_unknown_title', '未知错误')}", f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_unknown_message', '发生未知错误')}: {e}")
+
+def on_analyze():
+    input_text = formula_entry.get().strip()
+    if not input_text:
+        messagebox.showwarning(f"Chem2Line - {lang_dict.get('input_empty_title', '输入为空')}", lang_dict.get("input_empty_message", "请输入化学式或 SMILES"))
+        return
+
+    try:
+        smiles_list = get_smiles_options(input_text, smiles_dict)
+
+        if not smiles_list:
+            raise ValueError(f"{lang_dict.get('error_not_found', '找不到')} {input_text} {lang_dict.get('smiles_representation', '的 SMILES 表示，请检查输入或更换数据库')}")
+
+        if len(smiles_list) == 1:
+            selected_smiles = smiles_list[0]
+        else:
+            selected_smiles = show_smiles_selection(smiles_list)
+
+        if selected_smiles:
+            properties = analyze_molecule(selected_smiles, lang_dict)
+            properties_str = "\n".join([f"{key}: {value}" for key, value in properties.items()])
+            messagebox.showinfo(f"Chem2Line - {lang_dict.get('molecule_analysis', '分子分析')}", properties_str)
+            add_to_history(selected_smiles)
 
     except ValueError as e:
         messagebox.showerror(f"Chem2Line - {lang_dict.get('error_not_found_title', '未找到结果')}", f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
@@ -322,6 +496,7 @@ file_menu = Menu(menu_bar, tearoff=0)
 file_menu.add_command(label=lang_dict.get("save_image", "保存图像"), command=save_image)
 file_menu.add_command(label=lang_dict.get("config", "配置"), command=show_config_window)
 file_menu.add_separator()
+file_menu.add_command(label=lang_dict.get("view_long_history", "历史记录"), command=show_long_history)
 file_menu.add_command(label=lang_dict.get("exit", "退出"), command=root.quit)
 menu_bar.add_cascade(label=lang_dict.get("file", "文件"), menu=file_menu)
 
@@ -344,14 +519,25 @@ database_menu.add_cascade(label=lang_dict.get("common_databases", "常用数据�
 
 menu_bar.add_cascade(label=lang_dict.get("database", "数据库"), menu=database_menu)
 
-# 关于菜单
-about_menu = Menu(menu_bar, tearoff=0)
-about_menu.add_command(label=lang_dict.get("developer", "开发者"), command=show_about_developer)
-about_menu.add_command(label=lang_dict.get("repository", "软件仓库"), command=show_repository)
-menu_bar.add_cascade(label=lang_dict.get("about", "关于"), menu=about_menu)
+
+
+# 创建工具栏菜单
+overlay_menu = Menu(menu_bar, tearoff=0)
+overlay_menu.add_radiobutton(label=lang_dict.get("no_overlay", "无"), variable=output_type, value="none")
+overlay_menu.add_radiobutton(label=lang_dict.get("force_field", "力场"), variable=output_type, value="force_field", command=on_overlay_force_field)
+menu_bar.add_cascade(label=lang_dict.get("overlay", "叠加显示"), menu=overlay_menu)
+
+# 创建历史记录菜单
+history_menu = Menu(menu_bar, tearoff=0)
+
+menu_bar.add_cascade(label=lang_dict.get("history", "历史记录"), menu=history_menu)
 
 # 加载 SMILES 数据库
 smiles_dict = load_smiles_database(database_path)
+
+# 加载历史记录
+history = load_history()
+update_history_menu()
 
 # 创建输入框和标签
 input_label = tk.Label(root, text=lang_dict.get("input_label", "请输入化学式或 SMILES："), font=("Arial", 14))
@@ -360,17 +546,63 @@ input_label.pack(pady=10)
 formula_entry = tk.Entry(root, font=("Arial", 14), width=30)
 formula_entry.pack(pady=10)
 
+# 创建按钮框架
+button_frame = tk.Frame(root)
+button_frame.pack(pady=10)
+
 # 创建提交按钮
-submit_button = tk.Button(root, text=lang_dict.get("submit_button", "生成键线式"), font=("Arial", 14), command=on_submit)
-submit_button.pack(pady=20)
+submit_button = tk.Button(button_frame, text=lang_dict.get("submit_button", "生成键线式"), font=("Arial", 14), command=on_submit)
+submit_button.grid(row=0, column=0, padx=5)
 
 # 创建显示3D视图按钮
-view_3d_button = tk.Button(root, text=lang_dict.get("view_3d_button", "显示3D视图"), font=("Arial", 14), state=tk.DISABLED)
-view_3d_button.pack(pady=10)
+view_3d_button = tk.Button(button_frame, text=lang_dict.get("view_3d_button", "显示3D视图"), font=("Arial", 14), state=tk.DISABLED)
+view_3d_button.grid(row=0, column=1, padx=5)
+
+# 创建分析按钮
+analyze_button = tk.Button(button_frame, text=lang_dict.get("analyze_button", "分析分子"), font=("Arial", 14), command=on_analyze, state=tk.DISABLED)
+analyze_button.grid(row=0, column=2, padx=5)
+
+# 创建显示化学信息按钮
+#info_button = tk.Button(button_frame, text=lang_dict.get("info_button", "显示化学信息"), font=("Arial", 14), command=show_chemical_info)
+#info_button.grid(row=0, column=3, padx=5)
+# 关于菜单
+about_menu = Menu(menu_bar, tearoff=0)
+about_menu.add_command(label=lang_dict.get("developer", "开发者"), command=show_about_developer)
+about_menu.add_command(label=lang_dict.get("repository", "软件仓库"), command=show_repository)
+menu_bar.add_cascade(label=lang_dict.get("about", "关于"), menu=about_menu)
+def show_chemical_info():
+    input_text = formula_entry.get().strip()
+    if not input_text:
+        messagebox.showwarning(f"Chem2Line - {lang_dict.get('input_empty_title', '输入为空')}", lang_dict.get("input_empty_message", "请输入化学式或 SMILES"))
+        return
+
+    try:
+        smiles_list = get_smiles_options(input_text, smiles_dict)
+
+        if not smiles_list:
+            raise ValueError(f"{lang_dict.get('error_not_found', '找不到')} {input_text} {lang_dict.get('smiles_representation', '的 SMILES 表示，请检查输入或更换数据库')}")
+
+        if len(smiles_list) == 1:
+            selected_smiles = smiles_list[0]
+        else:
+            selected_smiles = show_smiles_selection(smiles_list)
+
+        if selected_smiles:
+            info_str = show_chemical_info(selected_smiles)
+            messagebox.showinfo(f"Chem2Line - {lang_dict.get('chemical_info', '化学信息')}", info_str)
+            add_to_history(selected_smiles)
+
+    except ValueError as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_not_found_title', '未找到结果')}", f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
+    except RuntimeError as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_generation_failed_title', '生成失败')}", f"{lang_dict.get('error_code', '错误代码')}: 1002\n{str(e)}")
+    except Exception as e:
+        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_unknown_title', '未知错误')}", f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_unknown_message', '发生未知错误')}: {e}")
 
 # 显示生成结果的标签
 result_label = tk.Label(root)
 result_label.pack(pady=20)
+
 
 # 运行主窗口
 root.mainloop()

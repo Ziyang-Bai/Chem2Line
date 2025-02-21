@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem import AllChem
+from rdkit.Chem import Descriptors
 import tkinter as tk
 from tkinter import Canvas
 import numpy as np
@@ -95,6 +96,21 @@ def formula_to_structure(smiles):
     except Exception as e:
         raise RuntimeError(f"发生错误: {e}")
 
+def overlay_force_field(mol):
+    """
+     叠加力场显示
+    :param mol: 分子对象
+    :return: 力场叠加图像
+    """
+    try:
+        # 计算力场
+        AllChem.Compute2DCoords(mol)
+        AllChem.MMFFOptimizeMolecule(mol)
+        img = Draw.MolToImage(mol, kekulize=True)
+        return img
+    except Exception as e:
+        raise RuntimeError(f"发生错误: {e}")
+
 def get_database_info(file="default_database.xml"):
     """
     获取数据库的基本信息
@@ -120,10 +136,80 @@ def get_database_info(file="default_database.xml"):
     }
     return info
 
+def analyze_molecule(smiles, lang_dict):
+    """
+    分析化学分子的性质
+    :param smiles: SMILES 表示
+    :param lang_dict: 语言字典
+    :return: 分子性质的字典
+    """
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            raise ValueError(f"{lang_dict.get('error_invalid_smiles', '无法从 SMILES 推导结构，请提供正确的 SMILES 表示形式')}")
+
+        # 计算分子性质
+        mol_weight = Descriptors.MolWt(mol)
+        num_atoms = mol.GetNumAtoms()
+        num_bonds = mol.GetNumBonds()
+        num_rings = Chem.GetSSSR(mol)
+        formula = Chem.rdMolDescriptors.CalcMolFormula(mol)
+
+        properties = {
+            lang_dict.get("molecular_weight", "分子量"): mol_weight,
+            lang_dict.get("num_atoms", "原子数"): num_atoms,
+            lang_dict.get("num_bonds", "键数"): num_bonds,
+            lang_dict.get("num_rings", "环数"): num_rings,
+            lang_dict.get("molecular_formula", "分子式"): formula
+        }
+
+        return properties
+
+    except Exception as e:
+        raise RuntimeError(f"{lang_dict.get('error_occurred', '发生错误')}: {e}")
+
+def get_chemical_info(smiles):
+    """
+    获取更多化学信息
+    :param smiles: SMILES 表示
+    :return: 化学信息的字典
+    """
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            raise ValueError("无效的SMILES字符串")
+
+        info = {
+            "分子量": Descriptors.MolWt(mol),
+            "LogP": Descriptors.MolLogP(mol),
+            "氢键受体数量": Descriptors.NumHAcceptors(mol),
+            "氢键供体数量": Descriptors.NumHDonors(mol),
+            "旋转键数量": Descriptors.NumRotatableBonds(mol),
+            "拓扑极性表面积": Descriptors.TPSA(mol)
+        }
+        return info
+
+    except Exception as e:
+        raise RuntimeError(f"获取化学信息时发生错误: {e}")
+
+def show_chemical_info(smiles):
+    """
+    显示化学信息
+    :param smiles: SMILES 表示
+    :return: 化学信息的字典
+    """
+    try:
+        info = get_chemical_info(smiles)
+        info_str = "\n".join([f"{key}: {value}" for key, value in info.items()])
+        return info_str
+    except Exception as e:
+        raise RuntimeError(f"获取化学信息时发生错误: {e}")
+
 class MoleculeViewer:
-    def __init__(self, root, smiles="C"):
+    def __init__(self, root, smiles="C", lang_dict=None):
         self.root = root
-        self.root.title("3D Molecule Viewer")
+        self.lang_dict = lang_dict or {}
+        self.root.title(self.lang_dict.get("3d_molecule_viewer", "3D Molecule Viewer"))
         self.canvas = Canvas(root, width=600, height=600, bg="black")
         self.canvas.pack()
 
@@ -159,11 +245,11 @@ class MoleculeViewer:
         control_frame.pack(pady=10)
 
         # 旋转/视图控制按钮
-        tk.Button(control_frame, text="重置视角", command=self.reset_view).grid(row=0, column=1, padx=5)
-        tk.Button(control_frame, text="缩放+", command=self.zoom_in).grid(row=1, column=0, padx=5)
-        tk.Button(control_frame, text="缩放-", command=self.zoom_out).grid(row=1, column=2, padx=5)
-        tk.Button(control_frame, text="透视+", command=lambda: self.adjust_perspective(1)).grid(row=2, column=0, padx=5)
-        tk.Button(control_frame, text="透视-", command=lambda: self.adjust_perspective(-1)).grid(row=2, column=2, padx=5)
+        tk.Button(control_frame, text=self.lang_dict.get("reset_view", "重置视角"), command=self.reset_view).grid(row=0, column=1, padx=5)
+        tk.Button(control_frame, text=self.lang_dict.get("zoom_in", "缩放+"), command=self.zoom_in).grid(row=1, column=0, padx=5)
+        tk.Button(control_frame, text=self.lang_dict.get("zoom_out", "缩放-"), command=self.zoom_out).grid(row=1, column=2, padx=5)
+        tk.Button(control_frame, text=self.lang_dict.get("perspective_increase", "透视+"), command=lambda: self.adjust_perspective(1)).grid(row=2, column=0, padx=5)
+        tk.Button(control_frame, text=self.lang_dict.get("perspective_decrease", "透视-"), command=lambda: self.adjust_perspective(-1)).grid(row=2, column=2, padx=5)
 
     def setup_mouse_controls(self):
         # 左键拖动旋转视角

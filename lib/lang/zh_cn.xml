@@ -53,4 +53,20 @@
     <config_saved_title>配置已保存</config_saved_title>
     <config_saved_message>配置已保存，请重启应用以应用更改。</config_saved_message>
     <save_button>保存</save_button>
+    <molecule_analysis>分子分析</molecule_analysis>
+    <error_invalid_smiles>无法从 SMILES 推导结构，请提供正确的 SMILES 表示形式</error_invalid_smiles>
+    <error_occurred>发生错误</error_occurred>
+    <molecular_weight>分子量</molecular_weight>
+    <num_atoms>原子数</num_atoms>
+    <num_bonds>键数</num_bonds>
+    <num_rings>环数</num_rings>
+    <molecular_formula>分子式</molecular_formula>
+    <3d_molecule_viewer>3D 分子查看器</3d_molecule_viewer>
+    <reset_view>重置视角</reset_view>
+    <zoom_in>缩放+</zoom_in>
+    <zoom_out>缩放-</zoom_out>
+    <perspective_increase>透视+</perspective_increase>
+    <perspective_decrease>透视-</perspective_decrease>
+    <overlay>叠加显示</overlay>
+    <overlay_force_field>力场</overlay_force_field>
 </language>
