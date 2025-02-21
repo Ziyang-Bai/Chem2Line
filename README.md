@@ -5,7 +5,7 @@
 <p><em>Generate key line formulas for organics at your computer!</em></p>
 </div>
 
-[中文版](README.md) | [English Version](README-English.md) | [Français Version](README-French.md)
+[中文版](README.md) | [English Version](README-English.md) | 
 
 # Chem2Line
 
@@ -28,8 +28,16 @@
 - **多语言支持**：支持简体中文，美式英语，法语，德语。
 - **错误代码**：解决问题从未如此简单！
 - **3D分子视图**: 纯纯自研，空间极小，资源极少，能用就行。
+- **调试工具**：运行时加上`--debug`参数即可开始调试。
 - **历史记录**: 我刚刚查了啥来着？
 - **力场优化**: 虽然位置不太对头。
+
+![alt text](image.png)
+截图
+
+![alt text](force-apply.svg)
+
+不太对的力场优化 但是至少有氢了
 
 **安装与依赖**
 
@@ -81,11 +89,12 @@ pip install rdkit
 
 **2.2. 下载已存在的数据库**
 
-这里有一些数据库供下载，你可以直接下载并方便的使用。
+这里有一些数据库供下载，你可以直接下载并解压后使用。
 | 数据库名称 | 下载地址 |
 |-----------|---------|
 | 默认数据库|[下载](https://github.com/Ziyang-Bai/Chem2Line/blob/main/lib/db/default_database.xml) |
-| PubChem含碳有机物|[下载](https://github.com/Ziyang-Bai/Chem2Line/blob/main/databases/pubchem_carbon.xml) |
+| PubChem含碳有机物|[下载](https://github.com/Ziyang-Bai/Chem2Line/blob/main/databases/pubchem_carbon.xml.tgz) |
+| PubChem所有物质|[下载](https://github.com/Ziyang-Bai/Chem2Line/blob/main/databases/pubchem_full.xml.tgz)
 
 **2.3. 提交你的数据库**
 
@@ -156,6 +165,7 @@ pip install rdkit
 - **2000**：配置加载错误
 - **2001**：配置保存错误
 - **3000**：语言加载错误
+- **1999**：未定义
 
 ## 改进
 
