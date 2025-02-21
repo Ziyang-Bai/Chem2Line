@@ -7,6 +7,8 @@ import time
 import threading
 import xml.etree.ElementTree as ET
 import os
+import sys
+from debug import enable_debug_mode  # 导入调试模块
 
 database_path = "lib/db/default_database.xml"
 VERSION = "1.3"
@@ -304,6 +306,10 @@ root = tk.Tk()
 root.title("Chem2Line")
 root.geometry("800x600")
 root.iconbitmap("lib/media/nctl.ico")
+
+# 检查是否启用调试模式
+if "--debug" in sys.argv:
+    enable_debug_mode(root, globals())
 
 output_type = StringVar(value="bondline")
 
