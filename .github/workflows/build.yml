@@ -43,7 +43,7 @@ jobs:
         include-data-files: lib/media/*=lib/media/
         lto: yes
         jobs: 4
-        windows-console-mode: no
+        windows-console-mode: disable
 
 
     - name: List build directory
