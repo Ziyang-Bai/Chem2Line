@@ -55,7 +55,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: CTLGUI-Executable
-        path: build/**
+        path: ./dist/ctlgui.exe
         if-no-files-found: warn
         include-hidden-files: false
       env:
