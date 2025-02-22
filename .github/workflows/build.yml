@@ -32,6 +32,9 @@ jobs:
         pip install rdkit
         pip install pillow  # Add this line to install PIL (Pillow)
 
+    - name: Create build directory
+      run: mkdir build
+
     - name: Build executable with Nuitka
       uses: Nuitka/Nuitka-Action@main
       with:
@@ -44,7 +47,6 @@ jobs:
         lto: yes
         jobs: 4
         windows-console-mode: disable
-
 
     - name: List build directory
       run: dir ./build
