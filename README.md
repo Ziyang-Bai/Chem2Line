@@ -3,7 +3,9 @@
 <h2>Chem2Line</h2>
 <p>在你的电脑生成有机物的键线式！</p>
 <p><em>Generate key line formulas for organics at your computer!</em></p>
+<img src="chem2linead.gif"></img>
 </div>
+
 
 [中文版](README.md) | [English Version](README-English.md) | 
 
