@@ -39,8 +39,12 @@ jobs:
         script-name: ctlgui.py
         windows-icon-from-ico: lib/media/nctl.ico
         enable-plugins: tk-inter
-      env:
-        NUITKA_OUTPUT_DIR: build/ctlgui.dist
+        output-dir: dist
+        include-data-files: lib/media/*=lib/media/
+        lto: yes
+        jobs: 4
+        windows-console-mode: no
+
 
     - name: List build directory
       run: dir ./build
@@ -51,7 +55,7 @@ jobs:
         dir ./build/ctlgui.dist
 
     - name: Upload executable artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: CTLGUI-Executable
         path: build/ctlgui.dist/**

@@ -17,18 +17,27 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
 
+    - name: List build directory
+      run: dir ./dist
+
+    - name: Check build directory contents
+      run: |
+        echo "Checking contents of dist"
+        dir ./dist
+
+    - name: Package executable and lib folder
+      run: |
+        mkdir dist/lib
+        cp -r lib/* dist/lib/
+        cd dist
     - name: Install dependencies
       run: |
         python -m venv build-env
         build-env\Scripts\activate
         python -m pip install --upgrade pip wheel
         pip install rdkit
-
+        pip install pillow  # Add this line to install PIL (Pillow)
     - name: Build executable with Nuitka
       uses: Nuitka/Nuitka-Action@main
       with:
@@ -36,29 +45,32 @@ jobs:
         script-name: ctlgui.py
         windows-icon-from-ico: lib/media/nctl.ico
         enable-plugins: tk-inter
-      env:
-        NUITKA_OUTPUT_DIR: build/ctlgui.dist
+        output-dir: dist
+        include-data-files: lib/media/*=lib/media/
+        lto: yes
+        jobs: 4
+        windows-console-mode: no
 
     - name: List build directory
-      run: dir ./build
+      run: dir ./dist
 
     - name: Check build directory contents
       run: |
-        echo "Checking contents of ctlgui.dist"
-        dir ./build/ctlgui.dist
+        echo "Checking contents of dist"
+        dir ./dist
 
     - name: Package executable and lib folder
       run: |
-        mkdir build/ctlgui.dist/lib
-        cp -r lib/* build/ctlgui.dist/lib/
-        cd build/ctlgui.dist
+        mkdir dist/lib
+        cp -r lib/* dist/lib/
+        cd dist
         Compress-Archive -Path ctlgui.exe, lib, *.dll, *.pyd, *.so, *.dylib -DestinationPath Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
 
     - name: Upload executable artifact
       uses: actions/upload-artifact@v4
       with:
         name: CTLGUI-Executable
-        path: build/ctlgui.dist/Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
+        path: dist/Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
         if-no-files-found: warn
         include-hidden-files: false
 
@@ -81,11 +93,11 @@ jobs:
         prerelease: false
 
     - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
+      uses: actions/upload-release-asset@main
       env:
         GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/ctlgui.dist/Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
+        asset_path: dist/Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
         asset_name: Chem2Line-${{ github.event.inputs.tag_name }}-Windows-x86_64.zip
         asset_content_type: application/zip
