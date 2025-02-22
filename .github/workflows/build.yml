@@ -51,11 +51,6 @@ jobs:
     - name: List build directory
       run: dir ./build
 
-    - name: Check build directory contents
-      run: |
-        echo "Checking contents of ctlgui.dist"
-        dir ./build/ctlgui.dist
-
     - name: Upload executable artifact
       uses: actions/upload-artifact@v4
       with:
