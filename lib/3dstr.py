@@ -5,7 +5,13 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 class MoleculeViewer:
-    def __init__(self, root, smiles="C"):
+    def __init__(self, root, smiles="C", model_type="ball_and_stick"):
+        """
+        初始化 MoleculeViewer
+        :param root: Tkinter 根窗口
+        :param smiles: SMILES 字符串
+        :param model_type: 模型类型 ("ball_and_stick" 或 "space_filling")
+        """
         self.root = root
         self.root.title("3D Molecule Viewer")
         self.canvas = Canvas(root, width=600, height=600, bg="black")
@@ -29,6 +35,9 @@ class MoleculeViewer:
         # 鼠标拖动相关变量（平移）
         self.last_pan_x = 0
         self.last_pan_y = 0
+
+        # 模型类型
+        self.model_type = model_type
 
         # 创建控件
         self.create_controls()
@@ -71,16 +80,19 @@ class MoleculeViewer:
         AllChem.EmbedMolecule(mol)
         AllChem.MMFFOptimizeMolecule(mol)
         
+        # 保存分子对象到实例变量
+        self.mol = mol
+        
         # 获取原子坐标和颜色
         conf = mol.GetConformer()
         self.atoms = np.array([conf.GetAtomPosition(i) for i in range(mol.GetNumAtoms())])
-        self.atom_colors = [self.get_atom_color(atom.GetSymbol()) for atom in mol.GetAtoms()]
+        self.atom_colors = [self.get_atom_color(atom.GetSymbol(), index=i) for i, atom in enumerate(mol.GetAtoms())]
         
         # 获取键信息
         self.bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) 
                      for bond in mol.GetBonds()]
 
-    def get_atom_color(self, symbol):
+    def get_atom_color(self, symbol, index=None):
         color_map = {
             "H": "#FFFFFF",   # 白色
             "C": "#00FFFF",   # 青色
@@ -93,7 +105,18 @@ class MoleculeViewer:
             "S": "#FFFF00",   # 黄色
             "P": "#FFA500"    # 橙色
         }
-        return color_map.get(symbol, "#FF69B4")  # 默认粉色
+        base_color = color_map.get(symbol, "#FF69B4")  # 默认粉色
+
+        # 如果提供了索引，动态调整颜色亮度
+        if index is not None:
+            adjustment = (index % 10) * 0.05  # 根据索引调整亮度
+            r, g, b = int(base_color[1:3], 16), int(base_color[3:5], 16), int(base_color[5:7], 16)
+            r = min(255, int(r * (1 - adjustment)))
+            g = min(255, int(g * (1 - adjustment)))
+            b = min(255, int(b * (1 - adjustment)))
+            return f"#{r:02X}{g:02X}{b:02X}"
+
+        return base_color
 
     def reset_view(self):
         self.angle_x = self.angle_y = self.angle_z = 0
@@ -188,6 +211,22 @@ class MoleculeViewer:
         # 组合旋转矩阵：Y -> X -> Z
         return Rz @ Rx @ Ry
 
+    def get_vdw_radius(self, symbol):
+        """获取原子的范德华半径（单位：Å）"""
+        vdw_radii = {
+            "H": 1.2,  # 氢
+            "C": 1.7,  # 碳
+            "N": 1.55, # 氮
+            "O": 1.52, # 氧
+            "F": 1.47, # 氟
+            "Cl": 1.75, # 氯
+            "Br": 1.85, # 溴
+            "I": 1.98, # 碘
+            "S": 1.8,  # 硫
+            "P": 1.8   # 磷
+        }
+        return vdw_radii.get(symbol, 1.5)  # 默认值
+
     def render_molecule(self):
         self.canvas.delete("all")
         width, height = 600, 600
@@ -196,31 +235,50 @@ class MoleculeViewer:
         rotation_matrix = self.get_rotation_matrix()
         rotated_coords = np.dot(self.atoms, rotation_matrix.T)
         
-        # 先对键按照平均深度排序（远处先绘制）
-        sorted_bonds = sorted(
-            self.bonds,
-            key=lambda bond: (rotated_coords[bond[0], 2] + rotated_coords[bond[1], 2]) / 2
-        )
-        for bond in sorted_bonds:
-            i, j = bond
-            z1 = rotated_coords[i, 2]
-            z2 = rotated_coords[j, 2]
-            
-            # 计算透视投影
-            x1 = rotated_coords[i, 0] * self.perspective_d / (self.perspective_d - z1)
-            y1 = rotated_coords[i, 1] * self.perspective_d / (self.perspective_d - z1)
-            x2 = rotated_coords[j, 0] * self.perspective_d / (self.perspective_d - z2)
-            y2 = rotated_coords[j, 1] * self.perspective_d / (self.perspective_d - z2)
-            
-            # 转换到画布坐标（加入平移偏移量）
-            cx1 = x1 * self.scale + width/2 + self.cam_offset_x
-            cy1 = -y1 * self.scale + height/2 + self.cam_offset_y
-            cx2 = x2 * self.scale + width/2 + self.cam_offset_x
-            cy2 = -y2 * self.scale + height/2 + self.cam_offset_y
-            
-            self.canvas.create_line(cx1, cy1, cx2, cy2, fill="#404040", width=2)
-        
-        # 对原子按照 z 坐标升序排序（远处先绘制，近处后绘制）
+        # 调整比例模型的缩放因子
+        if self.model_type == "space_filling":
+            scale_factor = 0.2  # 缩小原子间距离的比例因子
+            rotated_coords *= scale_factor
+
+        # 绘制分子键
+        if self.model_type == "ball_and_stick":
+            # 先对键按照平均深度排序（远处先绘制）
+            sorted_bonds = sorted(
+                self.bonds,
+                key=lambda bond: (rotated_coords[bond[0], 2] + rotated_coords[bond[1], 2]) / 2
+            )
+            for bond in sorted_bonds:
+                i, j = bond
+                z1 = rotated_coords[i, 2]
+                z2 = rotated_coords[j, 2]
+                
+                # 计算透视投影
+                x1 = rotated_coords[i, 0] * self.perspective_d / (self.perspective_d - z1)
+                y1 = rotated_coords[i, 1] * self.perspective_d / (self.perspective_d - z1)
+                x2 = rotated_coords[j, 0] * self.perspective_d / (self.perspective_d - z2)
+                y2 = rotated_coords[j, 1] * self.perspective_d / (self.perspective_d - z2)
+                
+                # 转换到画布坐标（加入平移偏移量）
+                cx1 = x1 * self.scale + width/2 + self.cam_offset_x
+                cy1 = -y1 * self.scale + height/2 + self.cam_offset_y
+                cx2 = x2 * self.scale + width/2 + self.cam_offset_x
+                cy2 = -y2 * self.scale + height/2 + self.cam_offset_y
+                
+                # 根据键类型绘制单键或多键
+                bond_type = self.get_bond_type(i, j)
+                if bond_type == 1:  # 单键
+                    self.canvas.create_line(cx1, cy1, cx2, cy2, fill="#404040", width=2)
+                elif bond_type == 2:  # 双键
+                    offset = 3  # 双键的偏移量
+                    self.canvas.create_line(cx1 - offset, cy1 - offset, cx2 - offset, cy2 - offset, fill="#404040", width=2)
+                    self.canvas.create_line(cx1 + offset, cy1 + offset, cx2 + offset, cy2 + offset, fill="#404040", width=2)
+                elif bond_type == 3:  # 三键
+                    offset = 4  # 三键的偏移量
+                    self.canvas.create_line(cx1, cy1, cx2, cy2, fill="#404040", width=2)
+                    self.canvas.create_line(cx1 - offset, cy1 - offset, cx2 - offset, cy2 - offset, fill="#404040", width=2)
+                    self.canvas.create_line(cx1 + offset, cy1 + offset, cx2 + offset, cy2 + offset, fill="#404040", width=2)
+
+        # 绘制分子原子
         sorted_indices = np.argsort(rotated_coords[:, 2])
         for i in sorted_indices:
             x, y, z = rotated_coords[i]
@@ -233,16 +291,75 @@ class MoleculeViewer:
             cx = x_proj * self.scale + width/2 + self.cam_offset_x
             cy = -y_proj * self.scale + height/2 + self.cam_offset_y
             
-            # 根据原子类型调整大小
-            atom_size = max(3, 8 * (self.perspective_d / (self.perspective_d - z)))
+            # 根据模型类型调整原子大小
+            if self.model_type == "ball_and_stick":
+                atom_size = max(3, 8 * (self.perspective_d / (self.perspective_d - z)))
+            elif self.model_type == "space_filling":
+                atom_size = self.get_vdw_radius(self.mol.GetAtomWithIdx(int(i)).GetSymbol()) * self.scale / 10
+            
+            # 动态调整颜色
+            atom_color = self.get_atom_color(self.mol.GetAtomWithIdx(int(i)).GetSymbol(), index=i)
+            
             self.canvas.create_oval(
                 cx - atom_size, cy - atom_size,
                 cx + atom_size, cy + atom_size,
-                fill=self.atom_colors[i], outline=""
+                fill=atom_color, outline=""
             )
+
+        # 绘制方向立方体
+        self.draw_direction_cube(rotation_matrix)
+
+    def draw_direction_cube(self, rotation_matrix):
+        """绘制右上角的方向立方体"""
+        size = 50  # 立方体大小
+        margin = 10  # 距离边缘的间距
+        center_x = 600 - size - margin
+        center_y = margin + size
+
+        # 定义立方体的顶点（局部坐标系）
+        cube_vertices = np.array([
+            [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],  # 后面四个顶点
+            [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]       # 前面四个顶点
+        ]) * (size / 2)
+
+        # 应用旋转矩阵
+        rotated_vertices = np.dot(cube_vertices, rotation_matrix.T)
+
+        # 投影到2D平面
+        projected_vertices = []
+        for vertex in rotated_vertices:
+            x_proj = vertex[0] + center_x
+            y_proj = -vertex[1] + center_y
+            projected_vertices.append((x_proj, y_proj))
+
+        # 定义立方体的边
+        cube_edges = [
+            (0, 1), (1, 2), (2, 3), (3, 0),  # 后面四条边
+            (4, 5), (5, 6), (6, 7), (7, 4),  # 前面四条边
+            (0, 4), (1, 5), (2, 6), (3, 7)   # 连接前后面的边
+        ]
+
+        # 绘制立方体的边
+        for edge in cube_edges:
+            start, end = edge
+            x1, y1 = projected_vertices[start]
+            x2, y2 = projected_vertices[end]
+            self.canvas.create_line(x1, y1, x2, y2, fill="#FFFFFF")
+
+        # 绘制方向文字
+        
+
+    def get_bond_type(self, atom1_idx, atom2_idx):
+        """获取键的类型（单键、双键或三键）"""
+        for bond in self.mol.GetBonds():
+            if (bond.GetBeginAtomIdx() == atom1_idx and bond.GetEndAtomIdx() == atom2_idx) or \
+               (bond.GetBeginAtomIdx() == atom2_idx and bond.GetEndAtomIdx() == atom1_idx):
+                return bond.GetBondTypeAsDouble()
+        return 1  # 默认单键
 
 # 创建并运行程序
 if __name__ == "__main__":
     root = tk.Tk()
-    viewer = MoleculeViewer(root, "CCC1=C2C(C(=C(C2=NC3=C1C=C(C=C3C=C(C)C)C=O)C)C)CCC(=O)OC4C(C(C(C(O4)C)O)O)O")
+    #viewer = MoleculeViewer(root, "C([C@@H]1[C@H]([C@@H]([C@H](C(O1)O)O)O)O)O", "space_filling")
+    viewer = MoleculeViewer(root, "C([C@@H]1[C@H]([C@@H]([C@H](C(O1)O)O)O)O)O", "ball_and_stick")
     root.mainloop()
