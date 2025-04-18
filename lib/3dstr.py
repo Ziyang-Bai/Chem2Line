@@ -360,6 +360,6 @@ class MoleculeViewer:
 # 创建并运行程序
 if __name__ == "__main__":
     root = tk.Tk()
-    #viewer = MoleculeViewer(root, "C([C@@H]1[C@H]([C@@H]([C@H](C(O1)O)O)O)O)O", "space_filling")
-    viewer = MoleculeViewer(root, "C([C@@H]1[C@H]([C@@H]([C@H](C(O1)O)O)O)O)O", "ball_and_stick")
+    viewer = MoleculeViewer(root, "C1=CC=C(C=C1)C=O", "space_filling")
+    #viewer = MoleculeViewer(root, "C1=CC=C(C=C1)C=O", "ball_and_stick")
     root.mainloop()
