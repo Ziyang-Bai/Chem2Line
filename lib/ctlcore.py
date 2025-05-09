@@ -94,7 +94,7 @@ def formula_to_structure(smiles):
 
 def overlay_force_field(mol):
     """
-      叠加力场显示
+       叠加力场显示
     :param mol: 分子对象
     :return: 力场叠加图像
     """
@@ -200,6 +200,19 @@ def show_chemical_info(smiles):
         return info_str
     except Exception as e:
         raise RuntimeError(f"获取化学信息时发生错误: {e}")
+
+def search_database(query, smiles_dict):
+    """
+    在数据库中查询化学物质
+    :param query: 查询字符串，可以是名称或化学式
+    :param smiles_dict: 已加载的 SMILES 数据库
+    :return: 匹配的化学物质列表，每个元素为 (名称, 化学式, SMILES)
+    """
+    results = []
+    for smiles, info in smiles_dict.items():
+        if query.lower() in info.get("name", "").lower() or query.lower() in info.get("formula", "").lower():
+            results.append((info.get("name", "N/A"), info.get("formula", "N/A"), smiles))
+    return results
 
 class MoleculeViewer:
     def __init__(self, root, smiles="C", lang_dict=None):
