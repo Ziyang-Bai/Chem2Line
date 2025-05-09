@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chem2Line WebEz Edition</title>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; background-color: white; }
+        #header { width: 100%; text-align: center; padding: 10px; background-color: #f0f0f0; font-size: 20px; font-weight: bold; border-bottom: 1px solid black; }
+        #main { display: flex; flex-direction: row; flex-grow: 1; }
+        #left-panel { width: 50%; display: flex; flex-direction: column; align-items: center; border-right: 1px solid black; }
+        #right-panel { width: 50%; display: flex; flex-direction: column; align-items: center; }
+        #controls { margin: 10px; }
+        #smiles-canvas { width: 100%; height: 400px; border: 1px solid black; background-color: white; }
+        canvas { width: 400px; height: 400px; border: 1px solid black; background-color: white; }
+        #joystick-row { display: flex; align-items: center; margin-top: 10px; }
+        #joystick-container, #camera-joystick-container {
+            width: 100px; height: 100px; background: rgba(0, 0, 0, 0.1); border-radius: 50%; touch-action: none; position: relative;
+        }
+        #joystick, #camera-joystick {
+            position: absolute; width: 40px; height: 40px; background: rgba(0, 0, 0, 0.5); border-radius: 50%; top: 30px; left: 30px;
+        }
+        #zoom-slider { margin: 0 20px; width: 150px; }
+    </style>
+</head>
+<body>
+    <div id="header">Chem2Line WebEz Edition</div>
+    <div id="main">
+        <div id="left-panel">
+            <div id="controls">
+                <input type="text" id="smiles" placeholder="Enter formula or SMILES" value="C1=CC=C(C=C1)C=O">
+                <button onclick="loadMolecule()">Load Molecule</button>
+            </div>
+            <div id="smiles-container">
+                <img id="smiles-image" alt="SMILES Bondline" style="width: 100%; height: 400px; border: 1px solid black;">
+            </div>
+            <div id="desktop-version-info" style="margin-top: 20px; text-align: center; font-size: 14px; color: gray;">
+                <p>获取 <a href="https://github.com/Ziyang-Bai/Chem2Line" target="_blank" style="color: blue; text-decoration: none;">Chem2Line桌面版</a> 使用更完整的功能！</p>
+                <p>开发者 <a href="https://ZiyangBai.com" target="_blank" style="color: blue; text-decoration: none;">Ziyang-Bai</a></p>
+                <p>访问 <a href="https://github.com/Ziyang-Bai/Chem2Line" target="_blank" style="color: blue; text-decoration: none;">软件仓库</a> 保持领先！</p>
+            </div>
+        </div>
+        <div id="right-panel">
+            <canvas id="viewer"></canvas>
+            <div id="joystick-row">
+                <div id="joystick-container">
+                    <div id="joystick"></div>
+                </div>
+                <input id="zoom-slider" type="range" min="1" max="50" value="20">
+                <div id="camera-joystick-container">
+                    <div id="camera-joystick"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const smilesImage = document.getElementById("smiles-image");
+        const canvas = document.getElementById("viewer");
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const light = new THREE.PointLight(0xffffff, 1.5);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+
+        const atomColors = {
+            H: 0xffffff, C: 0x00ffff, N: 0x0000ff, O: 0xff0000, F: 0x00ff00,
+            Cl: 0x00ff00, Br: 0x8b0000, I: 0x9400d3, S: 0xffff00, P: 0xffa500
+        };
+
+        const bondColor = 0x808080;
+
+        let moleculeGroup = new THREE.Group();
+        scene.add(moleculeGroup);
+
+        camera.position.z = 20;
+
+        // Variables for joystick and zoom
+        const joystickContainer = document.getElementById("joystick-container");
+        const joystick = document.getElementById("joystick");
+        let joystickActive = false;
+        let joystickStart = { x: 0, y: 0 };
+
+        const cameraJoystickContainer = document.getElementById("camera-joystick-container");
+        const cameraJoystick = document.getElementById("camera-joystick");
+        let cameraJoystickActive = false;
+        let cameraJoystickStart = { x: 0, y: 0 };
+
+        const zoomSlider = document.getElementById("zoom-slider");
+
+        // Joystick for molecule rotation
+        joystickContainer.addEventListener("mousedown", (event) => {
+            joystickActive = true;
+            joystickStart = { x: event.clientX, y: event.clientY };
+        });
+
+        joystickContainer.addEventListener("mousemove", (event) => {
+            if (!joystickActive) return;
+
+            const deltaX = event.clientX - joystickStart.x;
+            const deltaY = event.clientY - joystickStart.y;
+
+            const maxDistance = 40;
+            const distance = Math.min(maxDistance, Math.sqrt(deltaX ** 2 + deltaY ** 2));
+            const angle = Math.atan2(deltaY, deltaX);
+
+            joystick.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`;
+
+            moleculeGroup.rotation.y += deltaX * 0.005;
+            moleculeGroup.rotation.x += deltaY * 0.005;
+        });
+
+        joystickContainer.addEventListener("mouseup", () => {
+            joystickActive = false;
+            joystick.style.transform = "translate(0, 0)";
+        });
+
+        joystickContainer.addEventListener("mouseleave", () => {
+            joystickActive = false;
+            joystick.style.transform = "translate(0, 0)";
+        });
+
+        // Joystick for camera position
+        cameraJoystickContainer.addEventListener("mousedown", (event) => {
+            cameraJoystickActive = true;
+            cameraJoystickStart = { x: event.clientX, y: event.clientY };
+        });
+
+        cameraJoystickContainer.addEventListener("mousemove", (event) => {
+            if (!cameraJoystickActive) return;
+
+            const deltaX = event.clientX - cameraJoystickStart.x;
+            const deltaY = event.clientY - cameraJoystickStart.y;
+
+            const maxDistance = 40;
+            const distance = Math.min(maxDistance, Math.sqrt(deltaX ** 2 + deltaY ** 2));
+            const angle = Math.atan2(deltaY, deltaX);
+
+            cameraJoystick.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`;
+
+            camera.position.x += deltaX * 0.01;
+            camera.position.y -= deltaY * 0.01;
+        });
+
+        cameraJoystickContainer.addEventListener("mouseup", () => {
+            cameraJoystickActive = false;
+            cameraJoystick.style.transform = "translate(0, 0)";
+        });
+
+        cameraJoystickContainer.addEventListener("mouseleave", () => {
+            cameraJoystickActive = false;
+            cameraJoystick.style.transform = "translate(0, 0)";
+        });
+
+        // Zoom slider logic
+        zoomSlider.addEventListener("input", (event) => {
+            camera.position.z = event.target.value;
+        });
+
+        function loadMolecule() {
+            const smiles = document.getElementById("smiles").value;
+
+            // Fetch 3D molecule data
+            fetch("/molecule", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ smiles })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                renderMolecule(data);
+            });
+
+            // Fetch SMILES bondline image
+            fetch("/smiles_svg", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ smiles })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                smilesImage.src = "data:image/svg+xml;base64," + btoa(data.svg);
+            });
+        }
+
+        function renderMolecule(data) {
+            moleculeGroup.clear();
+            const { atoms, bonds } = data;
+
+            // Add atoms
+            atoms.forEach(atom => {
+                const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+                const material = new THREE.MeshPhongMaterial({ color: atomColors[atom.symbol] || 0xff69b4 });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(atom.x, atom.y, atom.z);
+                moleculeGroup.add(sphere);
+            });
+
+            // Add bonds
+            bonds.forEach(bond => {
+                const start = bond.start;
+                const end = bond.end;
+                const direction = bond.direction;
+
+                const length = Math.sqrt(direction.x ** 2 + direction.y ** 2 + direction.z ** 2);
+                const bondGeometry = new THREE.CylinderGeometry(0.1, 0.1, length, 32);
+                const bondMaterial = new THREE.MeshPhongMaterial({ color: bondColor });
+                const bondMesh = new THREE.Mesh(bondGeometry, bondMaterial);
+
+                bondMesh.position.set(
+                    (start.x + end.x) / 2,
+                    (start.y + end.y) / 2,
+                    (start.z + end.z) / 2
+                );
+
+                const axis = new THREE.Vector3(direction.x, direction.y, direction.z).normalize();
+                const quaternion = new THREE.Quaternion();
+                quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis);
+                bondMesh.setRotationFromQuaternion(quaternion);
+
+                moleculeGroup.add(bondMesh);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.setSize(400, 400);
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
