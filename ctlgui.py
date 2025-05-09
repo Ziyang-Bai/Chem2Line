@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, Scrollbar, Canvas, Menu, ttk, Toplevel, StringVar, OptionMenu
 from PIL import Image, ImageTk
-from lib.ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version, show_3d_viewer, analyze_molecule, overlay_force_field, get_chemical_info, show_chemical_info
+from lib.ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version, show_3d_viewer, analyze_molecule, overlay_force_field, get_chemical_info, show_chemical_info, search_database
 import time
 import threading
 import xml.etree.ElementTree as ET
@@ -569,6 +569,11 @@ history_menu = Menu(menu_bar, tearoff=0)
 
 menu_bar.add_cascade(label=lang_dict.get("history", "历史记录"), menu=history_menu)
 
+# 在菜单栏中添加查询工具
+#tools_menu = Menu(menu_bar, tearoff=0)
+#tools_menu.add_command(label=lang_dict.get("search_database", "查询数据库"), command=search_database)
+#menu_bar.add_cascade(label=lang_dict.get("tools", "工具"), menu=tools_menu)
+
 # 加载 SMILES 数据库
 smiles_dict = load_smiles_database(database_path)
 
@@ -640,6 +645,130 @@ def show_chemical_info():
 result_label = tk.Label(root)
 result_label.pack(pady=20)
 
+def search_database():
+    """
+    在已加载的数据库中查询化学物质
+    """
+    search_window = Toplevel(root)
+    search_window.title(lang_dict.get("search_database_title", "查询数据库"))
+    search_window.geometry("600x400")
+    search_window.iconbitmap("lib/media/nctl.ico")
+
+    def perform_search():
+        query = search_entry.get().strip()
+        if not query:
+            messagebox.showwarning(f"Chem2Line - {lang_dict.get('input_empty_title', '输入为空')}", lang_dict.get("input_empty_message", "请输入查询内容"))
+            return
+
+        results = search_database(query, smiles_dict)
+
+        for row in tree.get_children():
+            tree.delete(row)
+
+        for result in results:
+            tree.insert("", "end", values=result)
+
+        if not results:
+            messagebox.showinfo(f"Chem2Line - {lang_dict.get('no_results_title', '无结果')}", lang_dict.get("no_results_message", "未找到匹配的化学物质"))
+
+    # 搜索框
+    search_label = tk.Label(search_window, text=lang_dict.get("search_label", "请输入名称或化学式："), font=("Arial", 12))
+    search_label.pack(pady=10)
+
+    search_entry = tk.Entry(search_window, font=("Arial", 12), width=40)
+    search_entry.pack(pady=10)
+
+    search_button = tk.Button(search_window, text=lang_dict.get("search_button", "查询"), command=perform_search)
+    search_button.pack(pady=10)
+
+    # 结果表格
+    columns = ("name", "formula", "smiles")
+    tree = ttk.Treeview(search_window, columns=columns, show="headings")
+    tree.heading("name", text=lang_dict.get("name", "名称"))
+    tree.heading("formula", text=lang_dict.get("formula", "化学式"))
+    tree.heading("smiles", text="SMILES")
+    tree.pack(fill="both", expand=True)
+
+def advanced_search_gui():
+    """
+    高级查询界面，允许用户输入查询条件并选择查询类型
+    """
+    search_window = Toplevel(root)
+    search_window.title(lang_dict.get("advanced_search_title", "高级查询"))
+    search_window.geometry("600x400")
+    search_window.iconbitmap("lib/media/nctl.ico")
+
+    # 查询类型选项
+    search_type_label = tk.Label(search_window, text=lang_dict.get("search_type_label", "选择查询类型："), font=("Arial", 12))
+    search_type_label.pack(pady=5)
+
+    search_type_var = StringVar(value="name")  # 默认查询类型为名称
+    search_type_menu = ttk.Combobox(search_window, textvariable=search_type_var, state="readonly", values=[
+        lang_dict.get("search_by_name", "名称"),
+        lang_dict.get("search_by_formula", "化学式")
+    ])
+    search_type_menu.pack(pady=5)
+
+    # 查询输入框
+    search_label = tk.Label(search_window, text=lang_dict.get("search_label", "请输入查询内容："), font=("Arial", 12))
+    search_label.pack(pady=5)
+
+    search_entry = tk.Entry(search_window, font=("Arial", 12), width=40)
+    search_entry.pack(pady=5)
+
+    # 结果表格
+    columns = ("name", "formula", "smiles")
+    tree = ttk.Treeview(search_window, columns=columns, show="headings")
+    tree.heading("name", text=lang_dict.get("name", "名称"))
+    tree.heading("formula", text=lang_dict.get("formula", "化学式"))
+    tree.heading("smiles", text="SMILES")
+    tree.pack(fill="both", expand=True, pady=10)
+
+    def perform_search():
+        """
+        执行查询操作，根据用户输入和查询类型筛选结果
+        """
+        query = search_entry.get().strip().lower()
+        if not query:
+            messagebox.showwarning(f"Chem2Line - {lang_dict.get('input_empty_title', '输入为空')}", lang_dict.get("input_empty_message", "请输入查询内容"))
+            return
+
+        search_type = "name" if search_type_var.get() == lang_dict.get("search_by_name", "名称") else "formula"
+        results = []
+
+        for smiles, info in smiles_dict.items():
+            # 确保 info 是字典类型
+            if isinstance(info, dict) and query in info.get(search_type, "").lower():
+                results.append((info.get("name", "N/A"), info.get("formula", "N/A"), smiles))
+
+        # 清空表格并插入新结果
+        for row in tree.get_children():
+            tree.delete(row)
+
+        for result in results:
+            tree.insert("", "end", values=result)
+
+        if not results:
+            messagebox.showinfo(f"Chem2Line - {lang_dict.get('no_results_title', '无结果')}", lang_dict.get("no_results_message", "未找到匹配的化学物质"))
+
+    def reset_search():
+        """
+        重置查询界面，清空输入框和表格
+        """
+        search_entry.delete(0, tk.END)
+        for row in tree.get_children():
+            tree.delete(row)
+
+    # 查询按钮
+    search_button = tk.Button(search_window, text=lang_dict.get("search_button", "查询"), command=perform_search)
+    search_button.pack(side="left", padx=10, pady=10)
+
+    # 重置按钮
+    reset_button = tk.Button(search_window, text=lang_dict.get("reset_button", "重新开始"), command=reset_search)
+    reset_button.pack(side="right", padx=10, pady=10)
+
+# 在工具菜单中添加高级查询功能
+#tools_menu.add_command(label=lang_dict.get("advanced_search", "高级查询"), command=advanced_search_gui)
 
 # 运行主窗口
 root.mainloop()
