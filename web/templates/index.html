@@ -16,7 +16,6 @@
         #joystick-row { display: flex; align-items: center; margin-top: 10px; }
         #joystick-container, #camera-joystick-container {
             width: 100px; height: 100px; background: rgba(0, 0, 0, 0.1); border-radius: 50%; 
-            touch-action: none; /* 确保触摸事件不会触发滚动或缩放 */
             position: relative;
         }
         #joystick, #camera-joystick {
@@ -81,138 +80,106 @@
         // Variables for joystick and zoom
         const joystickContainer = document.getElementById("joystick-container");
         const joystick = document.getElementById("joystick");
-        let joystickActive = false;
-        let joystickStart = { x: 0, y: 0 };
-
         const cameraJoystickContainer = document.getElementById("camera-joystick-container");
         const cameraJoystick = document.getElementById("camera-joystick");
-        let cameraJoystickActive = false;
-        let cameraJoystickStart = { x: 0, y: 0 };
-
         const zoomSlider = document.getElementById("zoom-slider");
 
-        // Joystick for molecule rotation
-        joystickContainer.addEventListener("mousedown", (event) => {
-            joystickActive = true;
-            joystickStart = { x: event.clientX, y: event.clientY };
+        // Joystick setup function
+        function setupJoystick(container, joystick, callback) {
+            let active = false;
+            let start = { x: 0, y: 0 };
+            let touchId = null;
+
+            // Mouse events
+            container.addEventListener("mousedown", (event) => {
+                event.preventDefault(); // 阻止页面滚动
+                active = true;
+                start = { x: event.clientX, y: event.clientY };
+            });
+
+            container.addEventListener("mousemove", (event) => {
+                if (!active) return;
+                event.preventDefault(); // 阻止页面滚动
+                handleMove(event.clientX, event.clientY);
+            });
+
+            container.addEventListener("mouseup", (event) => {
+                event.preventDefault(); // 阻止页面滚动
+                active = false;
+                resetJoystick();
+            });
+
+            container.addEventListener("mouseleave", (event) => {
+                if (active) {
+                    event.preventDefault(); // 阻止页面滚动
+                    active = false;
+                    resetJoystick();
+                }
+            });
+
+            // Touch events
+            container.addEventListener("touchstart", (event) => {
+                if (event.touches.length > 1) return; // Ignore multi-touch
+                event.preventDefault(); // 阻止页面滚动
+                active = true;
+                touchId = event.touches[0].identifier;
+                start = { 
+                    x: event.touches[0].clientX, 
+                    y: event.touches[0].clientY 
+                };
+            });
+
+            container.addEventListener("touchmove", (event) => {
+                if (!active) return;
+                event.preventDefault(); // 阻止页面滚动
+
+                // Find the correct touch point
+                const touch = Array.from(event.touches).find(t => t.identifier === touchId);
+                if (!touch) return;
+
+                handleMove(touch.clientX, touch.clientY);
+            });
+
+            container.addEventListener("touchend", (event) => {
+                const touch = Array.from(event.changedTouches).find(t => t.identifier === touchId);
+                if (!touch) return;
+
+                event.preventDefault(); // 阻止页面滚动
+                active = false;
+                resetJoystick();
+            });
+
+            function handleMove(clientX, clientY) {
+                const deltaX = clientX - start.x;
+                const deltaY = clientY - start.y;
+
+                const maxDistance = 30;
+                const distance = Math.min(maxDistance, Math.sqrt(deltaX ** 2 + deltaY ** 2));
+                const angle = Math.atan2(deltaY, deltaX);
+
+                joystick.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`;
+
+                // Call the callback with normalized values (-1 to 1)
+                const normalizedX = deltaX / maxDistance;
+                const normalizedY = deltaY / maxDistance;
+                callback(normalizedX, normalizedY);
+            }
+
+            function resetJoystick() {
+                joystick.style.transform = "translate(0, 0)";
+                callback(0, 0);
+            }
+        }
+
+        // Initialize joysticks
+        setupJoystick(joystickContainer, joystick, (x, y) => {
+            moleculeGroup.rotation.y += x * 0.05;
+            moleculeGroup.rotation.x += y * 0.05;
         });
 
-        joystickContainer.addEventListener("mousemove", (event) => {
-            if (!joystickActive) return;
-
-            const deltaX = event.clientX - joystickStart.x;
-            const deltaY = event.clientY - joystickStart.y;
-
-            const maxDistance = 40;
-            const distance = Math.min(maxDistance, Math.sqrt(deltaX ** 2 + deltaY ** 2));
-            const angle = Math.atan2(deltaY, deltaX);
-
-            joystick.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`;
-
-            moleculeGroup.rotation.y += deltaX * 0.005;
-            moleculeGroup.rotation.x += deltaY * 0.005;
-        });
-
-        joystickContainer.addEventListener("mouseup", () => {
-            joystickActive = false;
-            joystick.style.transform = "translate(0, 0)";
-        });
-
-        joystickContainer.addEventListener("mouseleave", () => {
-            joystickActive = false;
-            joystick.style.transform = "translate(0, 0)";
-        });
-
-        // Add touch support for molecule rotation joystick
-        joystickContainer.addEventListener("touchstart", (event) => {
-            event.preventDefault(); // 阻止默认行为
-            joystickActive = true;
-            joystickStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
-        });
-
-        joystickContainer.addEventListener("touchmove", (event) => {
-            event.preventDefault(); // 阻止默认行为
-            if (!joystickActive) return;
-
-            const deltaX = event.touches[0].clientX - joystickStart.x;
-            const deltaY = event.touches[0].clientY - joystickStart.y;
-
-            const maxDistance = 40;
-            const distance = Math.min(maxDistance, Math.sqrt(deltaX ** 2 + deltaY ** 2));
-            const angle = Math.atan2(deltaY, deltaX);
-
-            joystick.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`;
-
-            moleculeGroup.rotation.y += deltaX * 0.005;
-            moleculeGroup.rotation.x += deltaY * 0.005;
-        });
-
-        joystickContainer.addEventListener("touchend", (event) => {
-            event.preventDefault(); // 阻止默认行为
-            joystickActive = false;
-            joystick.style.transform = "translate(0, 0)";
-        });
-
-        // Joystick for camera position
-        cameraJoystickContainer.addEventListener("mousedown", (event) => {
-            cameraJoystickActive = true;
-            cameraJoystickStart = { x: event.clientX, y: event.clientY };
-        });
-
-        cameraJoystickContainer.addEventListener("mousemove", (event) => {
-            if (!cameraJoystickActive) return;
-
-            const deltaX = event.clientX - cameraJoystickStart.x;
-            const deltaY = event.clientY - cameraJoystickStart.y;
-
-            const maxDistance = 40;
-            const distance = Math.min(maxDistance, Math.sqrt(deltaX ** 2 + deltaY ** 2));
-            const angle = Math.atan2(deltaY, deltaX);
-
-            cameraJoystick.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`;
-
-            camera.position.x += deltaX * 0.01;
-            camera.position.y -= deltaY * 0.01;
-        });
-
-        cameraJoystickContainer.addEventListener("mouseup", () => {
-            cameraJoystickActive = false;
-            cameraJoystick.style.transform = "translate(0, 0)";
-        });
-
-        cameraJoystickContainer.addEventListener("mouseleave", () => {
-            cameraJoystickActive = false;
-            cameraJoystick.style.transform = "translate(0, 0)";
-        });
-
-        // Add touch support for camera position joystick
-        cameraJoystickContainer.addEventListener("touchstart", (event) => {
-            event.preventDefault(); // 阻止默认行为
-            cameraJoystickActive = true;
-            cameraJoystickStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
-        });
-
-        cameraJoystickContainer.addEventListener("touchmove", (event) => {
-            event.preventDefault(); // 阻止默认行为
-            if (!cameraJoystickActive) return;
-
-            const deltaX = event.touches[0].clientX - cameraJoystickStart.x;
-            const deltaY = event.touches[0].clientY - cameraJoystickStart.y;
-
-            const maxDistance = 40;
-            const distance = Math.min(maxDistance, Math.sqrt(deltaX ** 2 + deltaY ** 2));
-            const angle = Math.atan2(deltaY, deltaX);
-
-            cameraJoystick.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`;
-
-            camera.position.x += deltaX * 0.01;
-            camera.position.y -= deltaY * 0.01;
-        });
-
-        cameraJoystickContainer.addEventListener("touchend", (event) => {
-            event.preventDefault(); // 阻止默认行为
-            cameraJoystickActive = false;
-            cameraJoystick.style.transform = "translate(0, 0)";
+        setupJoystick(cameraJoystickContainer, cameraJoystick, (x, y) => {
+            camera.position.x += x * 0.5;
+            camera.position.y -= y * 0.5;
         });
 
         // Zoom slider logic
