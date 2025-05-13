@@ -1,1 +1,1 @@
-<config><language>zh_cn</language><default_database>lib/db/default_database.xml</default_database><available_languages><language>zh_cn</language><language>en_us</language></available_languages></config>
+<config><language>zh_cn</language><default_database>lib/db/default_database.xml</default_database><record_history>false</record_history><available_languages><language>zh_cn</language><language>en_us</language></available_languages></config>

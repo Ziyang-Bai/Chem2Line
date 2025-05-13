@@ -94,7 +94,7 @@ def formula_to_structure(smiles):
 
 def overlay_force_field(mol):
     """
-       叠加力场显示
+        叠加力场显示
     :param mol: 分子对象
     :return: 力场叠加图像
     """
