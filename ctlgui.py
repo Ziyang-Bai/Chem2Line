@@ -2,13 +2,13 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, Scrollbar, Canvas, Menu, ttk, Toplevel, StringVar, OptionMenu
 from PIL import Image, ImageTk
-from lib.ctlcore import load_smiles_database, get_smiles_options, formula_to_bondline, get_database_info, core_version, show_3d_viewer, analyze_molecule, overlay_force_field, get_chemical_info, show_chemical_info, search_database
+from lib.ctlcore import *
+from lib.engine import *
 import time
 import threading
-import xml.etree.ElementTree as ET
 import os
 import sys
-from debug import enable_debug_mode  # 导入调试模块
+from lib.debug import enable_debug_mode  # 导入调试模块
 from rdkit import Chem  # 添加此行以导入 Chem
 from rdkit.Chem import Draw
 
@@ -25,18 +25,23 @@ def load_history():
     """
     从 XML 文件加载历史记录
     """
-    if not os.path.exists(history_file):
+    if not os.path.exists(history_file) or os.path.getsize(history_file) == 0:
+        # 如果文件不存在或为空，初始化空历史记录
         return []
 
-    tree = ET.parse(history_file)
-    root = tree.getroot()
-    history = []
-    for entry in root.findall("entry"):
-        smiles = entry.find("smiles").text
-        timestamp = entry.find("timestamp").text
-        input_text = entry.find("input_text").text
-        history.append({"smiles": smiles, "timestamp": timestamp, "input_text": input_text})
-    return history
+    try:
+        tree = ET.parse(history_file)
+        root = tree.getroot()
+        history = []
+        for entry in root.findall("entry"):
+            smiles = entry.find("smiles").text
+            timestamp = entry.find("timestamp").text
+            input_text = entry.find("input_text").text
+            history.append({"smiles": smiles, "timestamp": timestamp, "input_text": input_text})
+        return history
+    except ET.ParseError:
+        # 如果文件内容无效，返回空历史记录
+        return []
 
 def save_history():
     """
@@ -57,18 +62,22 @@ def save_history():
 def add_to_history(smiles):
     """
     添加SMILES到历史记录
-    :param smiles: SMILES 表示
     """
+    if not config.get('record_history', True):
+        return  # 如果禁用了历史记录，则不执行任何操作
+
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     input_text = formula_entry.get().strip()
     if smiles not in [entry["smiles"] for entry in history]:
         history.append({"smiles": smiles, "timestamp": timestamp, "input_text": input_text})
-        update_history_menu()
+        update_history_menu(history_menu, history)
         save_history()
 
-def update_history_menu():
+def update_history_menu(history_menu, history):
     """
     更新历史记录菜单
+    :param history_menu: 历史记录菜单对象
+    :param history: 历史记录列表
     """
     history_menu.delete(0, tk.END)
     for entry in history[-5:]:
@@ -103,7 +112,7 @@ def show_long_history():
                 history.remove(entry_to_delete)
                 tree.delete(item)
         save_history()
-        update_history_menu()
+        update_history_menu(history_menu, history)
 
     delete_button = tk.Button(history_window, text=lang_dict.get("delete", "删除"), command=delete_selected)
     delete_button.pack(pady=10)
@@ -117,7 +126,7 @@ def delete_history_entry(entry):
     """
     history.remove(entry)
     save_history()
-    update_history_menu()
+    update_history_menu(history_menu, history)
 
 def clear_history():
     """
@@ -125,7 +134,7 @@ def clear_history():
     """
     history.clear()
     save_history()
-    update_history_menu()
+    update_history_menu(history_menu, history)
 
 def show_smiles_selection(smiles_list):
     """
@@ -271,8 +280,7 @@ def on_submit():
         return
 
     try:
-        smiles_list = get_smiles_options(input_text, smiles_dict)
-
+        smiles_list = get_smiles_options(input_text, smiles_dict)  # 添加 smiles_dict 参数
         if not smiles_list:
             raise ValueError(f"找不到 {input_text} 的 SMILES 表示，请检查输入或更换数据库")
 
@@ -282,25 +290,19 @@ def on_submit():
             selected_smiles = show_smiles_selection(smiles_list)
 
         if selected_smiles:
-            try:
-                img = formula_to_bondline(selected_smiles)
-                img = ImageTk.PhotoImage(img)
+            img = formula_to_bondline(selected_smiles)
+            img = ImageTk.PhotoImage(img)
 
-                result_label.config(image=img)
-                result_label.image = img
+            result_label.config(image=img)
+            result_label.image = img
 
-                # 显示3D视图按钮
-                view_3d_button.config(state=tk.NORMAL, command=lambda: show_3d_viewer(selected_smiles))
-                analyze_button.config(state=tk.NORMAL)
-                add_to_history(selected_smiles)
-
-            except Exception as e:
-                raise RuntimeError(f"无法生成图像: {e}")
+            # 显示3D视图按钮
+            view_3d_button.config(state=tk.NORMAL, command=lambda: show_3d_viewer(selected_smiles))
+            analyze_button.config(state=tk.NORMAL)
+            add_to_history(selected_smiles)
 
     except ValueError as e:
         messagebox.showerror(f"Chem2Line - {lang_dict.get('error_not_found_title', '未找到结果')}", f"{lang_dict.get('error_code', '错误代码')}: 1001\n{str(e)}")
-    except RuntimeError as e:
-        messagebox.showerror(f"Chem2Line - {lang_dict.get('error_generation_failed_title', '生成失败')}", f"{lang_dict.get('error_code', '错误代码')}: 1002\n{str(e)}")
     except Exception as e:
         messagebox.showerror(f"Chem2Line - {lang_dict.get('error_unknown_title', '未知错误')}", f"{lang_dict.get('error_code', '错误代码')}: 1000\n{lang_dict.get('error_unknown_message', '发生未知错误')}: {e}")
 
@@ -311,7 +313,7 @@ def on_analyze():
         return
 
     try:
-        smiles_list = get_smiles_options(input_text, smiles_dict)
+        smiles_list = get_smiles_options(input_text, smiles_dict)  # 添加 smiles_dict 参数
 
         if not smiles_list:
             raise ValueError(f"{lang_dict.get('error_not_found', '找不到')} {input_text} {lang_dict.get('smiles_representation', '的 SMILES 表示，请检查输入或更换数据库')}")
@@ -348,7 +350,7 @@ def save_image_as_svg():
         return
 
     try:
-        smiles_list = get_smiles_options(input_text, smiles_dict)
+        smiles_list = get_smiles_options(input_text, smiles_dict)  # 添加 smiles_dict 参数
         if not smiles_list:
             raise ValueError(f"找不到 {input_text} 的 SMILES 表示，请检查输入或更换数据库")
 
@@ -417,18 +419,26 @@ def show_about_developer_with_icon():
 
 # 加载配置文件
 def load_config():
+    """
+    加载配置文件
+    """
     try:
         tree = ET.parse('lib/config/config.xml')
         root = tree.getroot()
         config = {child.tag: child.text for child in root if child.tag != 'available_languages'}
         config['available_languages'] = [lang.text for lang in root.find('available_languages')]
+        # 默认启用记录历史记录
+        config['record_history'] = config.get('record_history', 'true').lower() == 'true'
         return config
     except Exception as e:
         messagebox.showerror(lang_dict.get("config_error_title", "配置错误"), f"{lang_dict.get('error_code', '错误代码')}: 2000\n{lang_dict.get('config_error_message', '无法加载配置文件')}: {e}")
-        return {}
+        return {'record_history': True}
 
 # 保存配置文件
 def save_config(config):
+    """
+    保存配置文件
+    """
     try:
         root = ET.Element("config")
         for key, value in config.items():
@@ -439,7 +449,7 @@ def save_config(config):
                     lang_element.text = lang
             else:
                 child = ET.SubElement(root, key)
-                child.text = value
+                child.text = str(value).lower() if isinstance(value, bool) else value
         tree = ET.ElementTree(root)
         tree.write('lib/config/config.xml')
     except Exception as e:
@@ -469,6 +479,9 @@ def change_language(lang):
     root.quit()
 
 def show_config_window():
+    """
+    显示配置窗口
+    """
     config_window = Toplevel(root)
     config_window.title(lang_dict.get("config_title", "配置"))
     config_window.geometry("400x300")
@@ -492,10 +505,16 @@ def show_config_window():
     db_menu = OptionMenu(config_window, db_var, *db_files)
     db_menu.pack(pady=10)
 
+    # 是否记录历史记录
+    record_history_var = tk.BooleanVar(value=config.get('record_history', True))
+    record_history_check = tk.Checkbutton(config_window, text=lang_dict.get("record_history", "记录历史记录"), variable=record_history_var)
+    record_history_check.pack(pady=10)
+
     def save_config_changes():
         selected_lang = config['available_languages'][lang_options.index(lang_var.get())]
         config['language'] = selected_lang
         config['default_database'] = f'lib/db/{db_var.get()}'
+        config['record_history'] = record_history_var.get()
         save_config(config)
         messagebox.showinfo(lang_dict.get("config_saved_title", "配置已保存"), lang_dict.get("config_saved_message", "配置已保存，请重启应用以应用更改。"))
         config_window.destroy()
@@ -579,7 +598,6 @@ smiles_dict = load_smiles_database(database_path)
 
 # 加载历史记录
 history = load_history()
-update_history_menu()
 
 # 创建输入框和标签
 input_label = tk.Label(root, text=lang_dict.get("input_label", "请输入化学式或 SMILES："), font=("Arial", 14))
@@ -587,6 +605,7 @@ input_label.pack(pady=10)
 
 formula_entry = tk.Entry(root, font=("Arial", 14), width=30)
 formula_entry.pack(pady=10)
+update_history_menu(history_menu, history)
 
 # 创建按钮框架
 button_frame = tk.Frame(root)
@@ -769,6 +788,58 @@ def advanced_search_gui():
 
 # 在工具菜单中添加高级查询功能
 #tools_menu.add_command(label=lang_dict.get("advanced_search", "高级查询"), command=advanced_search_gui)
+
+def sdf_converter_gui():
+    """
+    SDF 转换工具的 GUI 界面
+    """
+    converter_window = Toplevel(root)
+    converter_window.title(lang_dict.get("sdf_converter_title", "SDF 转换工具"))
+    converter_window.geometry("400x300")
+    converter_window.iconbitmap("lib/media/nctl.ico")
+
+    def convert_sdf_to_smiles():
+        """
+        将 SDF 文件转换为 SMILES 格式
+        """
+        sdf_file = filedialog.askopenfilename(filetypes=[("SDF files", "*.sdf")])
+        if not sdf_file:
+            return
+
+        try:
+            output_file = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
+            if not output_file:
+                return
+
+            with open(sdf_file, "r") as sdf, open(output_file, "w") as output:
+                suppl = Chem.SDMolSupplier(sdf_file)
+                for mol in suppl:
+                    if mol is not None:
+                        smiles = Chem.MolToSmiles(mol)
+                        output.write(smiles + "\n")
+
+            messagebox.showinfo(lang_dict.get("conversion_success_title", "转换成功"), lang_dict.get("conversion_success_message", "SDF 文件已成功转换为 SMILES 格式"))
+        except Exception as e:
+            messagebox.showerror(lang_dict.get("conversion_error_title", "转换错误"), f"{lang_dict.get('error_code', '错误代码')}: 3000\n{lang_dict.get('conversion_error_message', '无法转换文件')}: {e}")
+
+    # 添加按钮
+    convert_button = tk.Button(converter_window, text=lang_dict.get("convert_button", "选择 SDF 文件并转换"), command=convert_sdf_to_smiles)
+    convert_button.pack(pady=20)
+
+# 在工具菜单中添加 SDF 转换工具
+tools_menu = Menu(menu_bar, tearoff=0)
+tools_menu.add_command(label=lang_dict.get("sdf_converter", "SDF 转换工具"), command=sdf_converter_gui)
+menu_bar.add_cascade(label=lang_dict.get("tools", "工具"), menu=tools_menu)
+
+# 定义 update_menu_callback 函数
+def update_menu_callback(history):
+    """
+    更新历史记录菜单的回调函数
+    """
+    update_history_menu(history_menu, history, formula_entry)
+
+# 修复 formula_entry 的引用
+update_history_menu(history_menu, history)
 
 # 运行主窗口
 root.mainloop()
