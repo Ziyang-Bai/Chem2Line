@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import Canvas
 import numpy as np
 
-CORE_VERSION = "1.2.2"
+CORE_VERSION = "1.2.3"
 
 def core_version():
     return CORE_VERSION
@@ -287,8 +287,8 @@ class MoleculeViewer:
         self.atoms = np.array([conf.GetAtomPosition(i) for i in range(mol.GetNumAtoms())])
         self.atom_colors = [self.get_atom_color(atom.GetSymbol()) for atom in mol.GetAtoms()]
         
-        # 获取键信息
-        self.bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) 
+        # 获取键信息，包含类型
+        self.bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondTypeAsDouble())
                      for bond in mol.GetBonds()]
 
     def get_atom_color(self, symbol):
@@ -413,7 +413,7 @@ class MoleculeViewer:
             key=lambda bond: (rotated_coords[bond[0], 2] + rotated_coords[bond[1], 2]) / 2
         )
         for bond in sorted_bonds:
-            i, j = bond
+            i, j, bond_type = bond
             z1 = rotated_coords[i, 2]
             z2 = rotated_coords[j, 2]
             
@@ -429,7 +429,20 @@ class MoleculeViewer:
             cx2 = x2 * self.scale + width/2 + self.cam_offset_x
             cy2 = -y2 * self.scale + height/2 + self.cam_offset_y
             
-            self.canvas.create_line(cx1, cy1, cx2, cy2, fill="#404040", width=2)
+            if bond_type == 2:  # 双键，画两条平行线
+                # 计算垂直方向
+                dx = cx2 - cx1
+                dy = cy2 - cy1
+                length = (dx**2 + dy**2) ** 0.5
+                if length == 0:
+                    offset_x, offset_y = 0, 0
+                else:
+                    offset_x = -dy / length * 4  # 4像素偏移
+                    offset_y = dx / length * 4
+                self.canvas.create_line(cx1 + offset_x, cy1 + offset_y, cx2 + offset_x, cy2 + offset_y, fill="#404040", width=2)
+                self.canvas.create_line(cx1 - offset_x, cy1 - offset_y, cx2 - offset_x, cy2 - offset_y, fill="#404040", width=2)
+            else:
+                self.canvas.create_line(cx1, cy1, cx2, cy2, fill="#404040", width=2)
         
         # 对原子按照 z 坐标升序排序（远处先绘制，近处后绘制）
         sorted_indices = np.argsort(rotated_coords[:, 2])

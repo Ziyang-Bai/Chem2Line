@@ -22,10 +22,79 @@
             position: absolute; width: 40px; height: 40px; background: rgba(0, 0, 0, 0.5); border-radius: 50%; top: 30px; left: 30px;
         }
         #zoom-slider { margin: 0 20px; width: 150px; }
+        #update-tip {
+            display:none;
+            position:fixed;
+            top:30px;
+            left:50%;
+            transform:translateX(-50%);
+            background:#007bff;
+            color:#fff;
+            padding:16px 32px;
+            border-radius:8px;
+            box-shadow:0 2px 12px rgba(0,0,0,0.15);
+            font-size:20px;
+            z-index:99999;
+        }
+        #update-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.25);
+            z-index: 99999;
+        }
+        #update-modal .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 400px;
+            min-width: 320px;
+            margin: 80px auto 0 auto;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+            padding: 0 0 24px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #update-modal .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 24px 0 8px 0;
+            color: #007bff;
+        }
+        #update-modal .modal-version {
+            font-size: 15px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        #update-modal .modal-log {
+            width: 90%;
+            max-height: 180px;
+            min-height: 60px;
+            background: #f7f7f7;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 18px;
+            padding: 10px 12px;
+            overflow-y: auto;
+            white-space: pre-line;
+        }
+        #update-modal .modal-close {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            padding: 7px 32px;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
     <div id="header">Chem2Line WebEz Edition</div>
+    <div id="update-tip">You Got A New Version!</div>
     <div id="main">
         <div id="left-panel">
             <div id="controls">
@@ -52,6 +121,14 @@
                     <div id="camera-joystick"></div>
                 </div>
             </div>
+        </div>
+    </div>
+    <div id="update-modal">
+        <div class="modal-content">
+            <div class="modal-title" id="update-modal-title">🎉 You Got A New Version!</div>
+            <div class="modal-version" id="update-modal-version"></div>
+            <div class="modal-log" id="update-modal-log"></div>
+            <button class="modal-close" onclick="closeUpdateModal()">关闭</button>
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -191,6 +268,38 @@
         zoomSlider.addEventListener("touchmove", (event) => {
             camera.position.z = event.target.value;
         });
+
+        // 显示更新提示
+        function showUpdateTip() {
+            const tip = document.getElementById('update-tip');
+            tip.style.display = 'block';
+            setTimeout(() => {
+                tip.style.display = 'none';
+            }, 3500);
+        }
+        // ====== 更新弹窗逻辑 ======
+        // 你可以在这里自定义版本号和更新日志内容
+        const UPDATE_VERSION = '2025-5-21S#1.2.3-1.4.3+';
+        const UPDATE_LOG = `
+- 支持多重键（双键、三键等）3D显示
+- 同分异构体支持
+- NewTech1.0风格弹窗支持
+`;
+        function showUpdateModal() {
+            document.getElementById('update-modal-title').innerText = '你获得了一份新的更新！';
+            document.getElementById('update-modal-version').innerText = '版本号：' + UPDATE_VERSION;
+            document.getElementById('update-modal-log').innerText = UPDATE_LOG;
+            document.getElementById('update-modal').style.display = 'block';
+        }
+        function closeUpdateModal() {
+            document.getElementById('update-modal').style.display = 'none';
+        }
+        // 检查本地存储的版本号
+        if (localStorage.getItem('chem2line_version') !== UPDATE_VERSION) {
+            showUpdateModal();
+            localStorage.setItem('chem2line_version', UPDATE_VERSION);
+        }
+        // ====== 其它原有JS代码... ======
 
         function loadMolecule() {
             const smiles = document.getElementById("smiles").value;
@@ -385,24 +494,50 @@
                 const start = bond.start;
                 const end = bond.end;
                 const direction = bond.direction;
-
+                const type = bond.type || 1;
+                const nBonds = Math.round(type);
                 const length = Math.sqrt(direction.x ** 2 + direction.y ** 2 + direction.z ** 2);
-                const bondGeometry = new THREE.CylinderGeometry(0.1, 0.1, length, 32);
-                const bondMaterial = new THREE.MeshPhongMaterial({ color: bondColor });
-                const bondMesh = new THREE.Mesh(bondGeometry, bondMaterial);
-
-                bondMesh.position.set(
-                    (start.x + end.x) / 2,
-                    (start.y + end.y) / 2,
-                    (start.z + end.z) / 2
-                );
-
                 const axis = new THREE.Vector3(direction.x, direction.y, direction.z).normalize();
+                const up = new THREE.Vector3(0, 1, 0);
                 const quaternion = new THREE.Quaternion();
-                quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis);
-                bondMesh.setRotationFromQuaternion(quaternion);
-
-                moleculeGroup.add(bondMesh);
+                quaternion.setFromUnitVectors(up, axis);
+                // 计算中心点
+                const center = {
+                    x: (start.x + end.x) / 2,
+                    y: (start.y + end.y) / 2,
+                    z: (start.z + end.z) / 2
+                };
+                if (nBonds > 1) {
+                    // 多键，画多根平行cylinder
+                    let perp = new THREE.Vector3(direction.y, -direction.x, 0);
+                    if (perp.length() < 1e-3) {
+                        perp = new THREE.Vector3(0, direction.z, -direction.y);
+                    }
+                    perp.normalize();
+                    perp.multiplyScalar(0.15);
+                    for (let k = 0; k < nBonds; k++) {
+                        let offset;
+                        if (nBonds % 2 === 1) {
+                            offset = k - Math.floor(nBonds/2);
+                        } else {
+                            offset = k - (nBonds-1)/2;
+                        }
+                        const bondGeometry = new THREE.CylinderGeometry(0.08, 0.08, length, 16);
+                        const bondMaterial = new THREE.MeshPhongMaterial({ color: bondColor });
+                        const bondMesh = new THREE.Mesh(bondGeometry, bondMaterial);
+                        bondMesh.position.set(center.x + offset*perp.x, center.y + offset*perp.y, center.z + offset*perp.z);
+                        bondMesh.setRotationFromQuaternion(quaternion);
+                        moleculeGroup.add(bondMesh);
+                    }
+                } else {
+                    // 单键
+                    const bondGeometry = new THREE.CylinderGeometry(0.12, 0.12, length, 16);
+                    const bondMaterial = new THREE.MeshPhongMaterial({ color: bondColor });
+                    const bondMesh = new THREE.Mesh(bondGeometry, bondMaterial);
+                    bondMesh.position.set(center.x, center.y, center.z);
+                    bondMesh.setRotationFromQuaternion(quaternion);
+                    moleculeGroup.add(bondMesh);
+                }
             });
         }
 
