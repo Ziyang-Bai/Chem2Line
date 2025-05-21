@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import Canvas
 import numpy as np
 
-CORE_VERSION = "1.2.2"
+CORE_VERSION = "1.2.3"
 
 def core_version():
     return CORE_VERSION
@@ -94,7 +94,7 @@ def formula_to_structure(smiles):
 
 def overlay_force_field(mol):
     """
-      叠加力场显示
+        叠加力场显示
     :param mol: 分子对象
     :return: 力场叠加图像
     """
@@ -201,6 +201,19 @@ def show_chemical_info(smiles):
     except Exception as e:
         raise RuntimeError(f"获取化学信息时发生错误: {e}")
 
+def search_database(query, smiles_dict):
+    """
+    在数据库中查询化学物质
+    :param query: 查询字符串，可以是名称或化学式
+    :param smiles_dict: 已加载的 SMILES 数据库
+    :return: 匹配的化学物质列表，每个元素为 (名称, 化学式, SMILES)
+    """
+    results = []
+    for smiles, info in smiles_dict.items():
+        if query.lower() in info.get("name", "").lower() or query.lower() in info.get("formula", "").lower():
+            results.append((info.get("name", "N/A"), info.get("formula", "N/A"), smiles))
+    return results
+
 class MoleculeViewer:
     def __init__(self, root, smiles="C", lang_dict=None):
         self.root = root
@@ -274,8 +287,8 @@ class MoleculeViewer:
         self.atoms = np.array([conf.GetAtomPosition(i) for i in range(mol.GetNumAtoms())])
         self.atom_colors = [self.get_atom_color(atom.GetSymbol()) for atom in mol.GetAtoms()]
         
-        # 获取键信息
-        self.bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) 
+        # 获取键信息，包含类型
+        self.bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondTypeAsDouble())
                      for bond in mol.GetBonds()]
 
     def get_atom_color(self, symbol):
@@ -400,7 +413,7 @@ class MoleculeViewer:
             key=lambda bond: (rotated_coords[bond[0], 2] + rotated_coords[bond[1], 2]) / 2
         )
         for bond in sorted_bonds:
-            i, j = bond
+            i, j, bond_type = bond
             z1 = rotated_coords[i, 2]
             z2 = rotated_coords[j, 2]
             
@@ -415,8 +428,28 @@ class MoleculeViewer:
             cy1 = -y1 * self.scale + height/2 + self.cam_offset_y
             cx2 = x2 * self.scale + width/2 + self.cam_offset_x
             cy2 = -y2 * self.scale + height/2 + self.cam_offset_y
-            
-            self.canvas.create_line(cx1, cy1, cx2, cy2, fill="#404040", width=2)
+            n_bonds = int(round(bond_type))
+            if n_bonds > 1:
+                # 多键，画多条平行线
+                dx = cx2 - cx1
+                dy = cy2 - cy1
+                length = (dx**2 + dy**2) ** 0.5
+                if length == 0:
+                    offset_x, offset_y = 0, 0
+                else:
+                    offset_x = -dy / length * 4
+                    offset_y = dx / length * 4
+                for k in range(n_bonds):
+                    if n_bonds % 2 == 1:
+                        offset = (k - n_bonds//2)
+                    else:
+                        offset = (k - (n_bonds-1)/2)
+                    self.canvas.create_line(
+                        cx1 + offset*offset_x, cy1 + offset*offset_y,
+                        cx2 + offset*offset_x, cy2 + offset*offset_y,
+                        fill="#404040", width=2)
+            else:
+                self.canvas.create_line(cx1, cy1, cx2, cy2, fill="#404040", width=2)
         
         # 对原子按照 z 坐标升序排序（远处先绘制，近处后绘制）
         sorted_indices = np.argsort(rotated_coords[:, 2])

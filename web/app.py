@@ -58,7 +58,7 @@ def molecule():
             "start": {"x": start_pos.x, "y": start_pos.y, "z": start_pos.z},
             "end": {"x": end_pos.x, "y": end_pos.y, "z": end_pos.z},
             "direction": {"x": dx, "y": dy, "z": dz},
-            "type": int(bond.GetBondTypeAsDouble())
+            "type": bond.GetBondTypeAsDouble()  # 保持为float，前端可支持多键
         })
 
     return jsonify({"atoms": atoms, "bonds": bonds, "smiles_options": smiles_list, "used_smiles": smiles})
