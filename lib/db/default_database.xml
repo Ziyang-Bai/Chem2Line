@@ -9,7 +9,6 @@
     <formula>C6H6</formula>
     <cas>71-43-2</cas>
   </compound>
-  
   <compound>
     <name>咖啡因</name>
     <smiles>CN1C=NC2=C1C(=O)N(C(=O)N2C)C</smiles>
@@ -50,5 +49,18 @@
     <smiles>CC(=O)O</smiles>
     <formula>C2H4O2</formula>
     <cas>64-19-7</cas>
+  </compound>
+
+    <compound>
+    <name>X1</name>
+    <smiles>C1CCCCC1</smiles>
+    <formula>X</formula>
+    <cas>71-43-2</cas>
+  </compound>
+    <compound>
+    <name>X2</name>
+    <smiles>C</smiles>
+    <formula>X</formula>
+    <cas>71-43-2</cas>
   </compound>
 </smiles_database>

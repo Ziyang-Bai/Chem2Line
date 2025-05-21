@@ -194,8 +194,7 @@
 
         function loadMolecule() {
             const smiles = document.getElementById("smiles").value;
-
-            // Fetch 3D molecule data
+            // 先请求 /molecule，获取所有可选 SMILES
             fetch("/molecule", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -207,14 +206,156 @@
                     alert(data.error);
                     return;
                 }
-                renderMolecule(data);
+                // 如果有多个 SMILES，按钮式选择
+                if (data.smiles_options && data.smiles_options.length > 1) {
+                    showSmilesOptionsWithImages(data.smiles_options, data.used_smiles);
+                } else {
+                    // 只有一个，直接渲染
+                    fetchAndRender(smiles, data.used_smiles);
+                }
+            });
+        }
+
+        function showSmilesOptionsWithImages(options, used) {
+            // 创建遮罩层和弹窗
+            let overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.left = 0;
+            overlay.style.top = 0;
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0,0,0,0.3)';
+            overlay.style.zIndex = 9999;
+            overlay.id = 'smiles-select-overlay';
+
+            let modal = document.createElement('div');
+            modal.style.background = '#fff';
+            modal.style.borderRadius = '10px';
+            modal.style.padding = '24px';
+            modal.style.maxWidth = '90vw';
+            modal.style.maxHeight = '80vh';
+            modal.style.overflowY = 'auto';
+            modal.style.margin = '60px auto';
+            modal.style.boxShadow = '0 2px 16px rgba(0,0,0,0.2)';
+            modal.style.display = 'flex';
+            modal.style.flexDirection = 'column';
+            modal.style.alignItems = 'center';
+
+            let title = document.createElement('div');
+            title.innerText = '检测到多个同分子式的结构，请选择：';
+            title.style.fontSize = '18px';
+            title.style.marginBottom = '16px';
+            modal.appendChild(title);
+
+            let grid = document.createElement('div');
+            grid.style.display = 'flex';
+            grid.style.flexWrap = 'wrap';
+            grid.style.gap = '20px';
+            grid.style.justifyContent = 'center';
+
+            options.forEach((smiles, idx) => {
+                let cell = document.createElement('div');
+                cell.style.display = 'flex';
+                cell.style.flexDirection = 'column';
+                cell.style.alignItems = 'center';
+                cell.style.border = smiles === used ? '2px solid #007bff' : '1px solid #ccc';
+                cell.style.borderRadius = '8px';
+                cell.style.padding = '10px';
+                cell.style.background = smiles === used ? '#eaf4ff' : '#fafafa';
+                cell.style.minWidth = '120px';
+                cell.style.maxWidth = '180px';
+
+                // SVG图像
+                let img = document.createElement('img');
+                img.alt = smiles;
+                img.style.width = '120px';
+                img.style.height = '120px';
+                img.style.objectFit = 'contain';
+                img.style.background = '#fff';
+                img.style.marginBottom = '8px';
+                // 先显示loading
+                img.src = '';
+                fetch('/smiles_svg', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ smiles, selected_smiles: smiles })
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.svg) {
+                        img.src = 'data:image/svg+xml;base64,' + btoa(d.svg);
+                    } else {
+                        img.alt = 'SVG生成失败';
+                    }
+                });
+                cell.appendChild(img);
+
+                // SMILES文本
+                let smilesText = document.createElement('div');
+                smilesText.innerText = smiles;
+                smilesText.style.fontSize = '13px';
+                smilesText.style.wordBreak = 'break-all';
+                smilesText.style.marginBottom = '8px';
+                cell.appendChild(smilesText);
+
+                // 选择按钮
+                let btn = document.createElement('button');
+                btn.innerText = smiles === used ? '默认结构' : '选择';
+                btn.style.background = smiles === used ? '#007bff' : '#eee';
+                btn.style.color = smiles === used ? '#fff' : '#333';
+                btn.style.border = 'none';
+                btn.style.borderRadius = '4px';
+                btn.style.padding = '6px 16px';
+                btn.style.cursor = 'pointer';
+                btn.onclick = () => {
+                    document.body.removeChild(overlay);
+                    fetchAndRender(smiles, smiles);
+                };
+                cell.appendChild(btn);
+
+                grid.appendChild(cell);
             });
 
-            // Fetch SMILES bondline image
+            modal.appendChild(grid);
+            // 关闭按钮
+            let closeBtn = document.createElement('button');
+            closeBtn.innerText = '取消';
+            closeBtn.style.marginTop = '20px';
+            closeBtn.style.background = '#ccc';
+            closeBtn.style.color = '#333';
+            closeBtn.style.border = 'none';
+            closeBtn.style.borderRadius = '4px';
+            closeBtn.style.padding = '6px 24px';
+            closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = () => {
+                document.body.removeChild(overlay);
+            };
+            modal.appendChild(closeBtn);
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+
+        function fetchAndRender(smiles, selected_smiles) {
+            // 获取结构
+            fetch("/molecule", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ smiles, selected_smiles })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                renderMolecule(data);
+            });
+            // 获取SVG
             fetch("/smiles_svg", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ smiles })
+                body: JSON.stringify({ smiles, selected_smiles })
             })
             .then(response => response.json())
             .then(data => {
