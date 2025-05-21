@@ -22,7 +22,12 @@ def molecule():
     if not smiles_list:
         return jsonify({"error": "No matching SMILES found"}), 400
 
-    smiles = smiles_list[0]  # 默认使用第一个匹配的 SMILES
+    selected_smiles = data.get("selected_smiles")
+    if selected_smiles and selected_smiles in smiles_list:
+        smiles = selected_smiles
+    else:
+        smiles = smiles_list[0]
+
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return jsonify({"error": "Invalid SMILES string"}), 400
@@ -52,11 +57,11 @@ def molecule():
         bonds.append({
             "start": {"x": start_pos.x, "y": start_pos.y, "z": start_pos.z},
             "end": {"x": end_pos.x, "y": end_pos.y, "z": end_pos.z},
-            "direction": {"x": dx, "y": dy, "z": dz},  # 添加方向向量
+            "direction": {"x": dx, "y": dy, "z": dz},
             "type": int(bond.GetBondTypeAsDouble())
         })
 
-    return jsonify({"atoms": atoms, "bonds": bonds})
+    return jsonify({"atoms": atoms, "bonds": bonds, "smiles_options": smiles_list, "used_smiles": smiles})
 
 @app.route("/smiles_svg", methods=["POST"])
 def smiles_svg():
@@ -66,11 +71,14 @@ def smiles_svg():
     if not smiles_list:
         return jsonify({"error": "No matching SMILES found"}), 400
 
-    smiles = smiles_list[0]  # 默认使用第一个匹配的 SMILES
+    selected_smiles = data.get("selected_smiles")
+    if selected_smiles and selected_smiles in smiles_list:
+        smiles = selected_smiles
+    else:
+        smiles = smiles_list[0]
     try:
-        # 使用 ctlcore.py 中的 formula_to_bondline 生成 SVG
         svg = formula_to_bondline(smiles, image_type="SVG")
-        return jsonify({"svg": svg})
+        return jsonify({"svg": svg, "smiles_options": smiles_list, "used_smiles": smiles})
     except Exception as e:
         return jsonify({"error": f"Failed to generate SVG: {str(e)}"}), 500
 
