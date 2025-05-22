@@ -496,6 +496,7 @@
                 const direction = bond.direction;
                 const type = bond.type || 1;
                 const nBonds = Math.round(type);
+                const isAromatic = bond.aromatic;
                 const length = Math.sqrt(direction.x ** 2 + direction.y ** 2 + direction.z ** 2);
                 const axis = new THREE.Vector3(direction.x, direction.y, direction.z).normalize();
                 const up = new THREE.Vector3(0, 1, 0);
@@ -507,7 +508,15 @@
                     y: (start.y + end.y) / 2,
                     z: (start.z + end.z) / 2
                 };
-                if (nBonds > 1) {
+                if (isAromatic) {
+                    // 芳香键，画一条细线（或虚线，three.js不支持虚线cylinder，细线即可）
+                    const bondGeometry = new THREE.CylinderGeometry(0.05, 0.05, length, 16);
+                    const bondMaterial = new THREE.MeshPhongMaterial({ color: 0xA0522D }); // 棕色或自定义
+                    const bondMesh = new THREE.Mesh(bondGeometry, bondMaterial);
+                    bondMesh.position.set(center.x, center.y, center.z);
+                    bondMesh.setRotationFromQuaternion(quaternion);
+                    moleculeGroup.add(bondMesh);
+                } else if (nBonds > 1) {
                     // 多键，画多根平行cylinder
                     let perp = new THREE.Vector3(direction.y, -direction.x, 0);
                     if (perp.length() < 1e-3) {
