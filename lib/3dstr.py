@@ -22,7 +22,7 @@ class MoleculeViewer:
         self.angle_y = 0
         self.angle_z = 0
         self.scale = 100         # 缩放范围从50到500
-        self.perspective_d = 5   # 透视参数范围从1到20
+        self.perspective_d = 5   # 透视参数范围从1到20之间
 
         # 摄像机平移偏移量
         self.cam_offset_x = 0
@@ -71,6 +71,11 @@ class MoleculeViewer:
         self.canvas.bind("<Control-MouseWheel>", self.on_perspective_wheel)
 
     def load_molecule(self, smiles):
+        if smiles == "teapot":
+            self.show_teapot = True
+            self.load_teapot()
+            return
+        self.show_teapot = False
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             raise ValueError("无效的SMILES字符串")
@@ -91,6 +96,9 @@ class MoleculeViewer:
         # 获取键信息
         self.bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) 
                      for bond in mol.GetBonds()]
+
+        # 加载Utah茶壶模型
+        self.load_teapot()
 
     def get_atom_color(self, symbol, index=None):
         color_map = {
@@ -227,7 +235,65 @@ class MoleculeViewer:
         }
         return vdw_radii.get(symbol, 1.5)  # 默认值
 
+    def load_teapot(self):
+        body = []
+        for t in np.linspace(0, 2*np.pi, 60, endpoint=False):
+            x = 1.5 * np.cos(t)
+            y = 1.0 * np.sin(t)
+            z = 2.4 + 0.18 * np.sin(3*t)
+            body.append([x, y, z])
+        lid = []
+        for t in np.linspace(0, 2*np.pi, 30, endpoint=False):
+            x = 0.7 * np.cos(t)
+            y = 0.7 * np.sin(t)
+            z = 2.8 + 0.09 * np.cos(2*t)
+            lid.append([x, y, z])
+        spout = []
+        for t in np.linspace(0, 1, 20):
+            x = 1.5 + 1.2*t + 0.2*np.sin(2*np.pi*t)
+            y = 0.25*np.sin(np.pi*t)
+            z = 2.5 + 0.3*t + 0.08*np.cos(3*t)
+            spout.append([x, y, z])
+        handle = []
+        for t in np.linspace(-np.pi/2, 3*np.pi/2, 30):
+            x = -1.5 + 0.8 * np.cos(t)
+            y = 0.95 * np.sin(t)
+            z = 2.5 + 0.12 * np.cos(2*t)
+            handle.append([x, y, z])
+        knob = []
+        for t in np.linspace(0, 2*np.pi, 15, endpoint=False):
+            x = 0.18 * np.cos(t)
+            y = 0.18 * np.sin(t)
+            z = 2.95 + 0.05 * np.sin(2*t)
+            knob.append([x, y, z])
+        self.teapot_lines = [body, lid, spout, handle, knob]
+
+    def render_teapot(self):
+        self.canvas.delete("all")
+        width, height = 600, 600
+        rotation_matrix = self.get_rotation_matrix()
+        scale = self.scale * 1.2
+        cx, cy = width/2 + self.cam_offset_x, height/2 + self.cam_offset_y
+        for line in self.teapot_lines:
+            pts = np.dot(np.array(line), rotation_matrix.T)
+            proj = []
+            for v in pts:
+                z = v[2]
+                x_proj = v[0] * self.perspective_d / (self.perspective_d - z)
+                y_proj = v[1] * self.perspective_d / (self.perspective_d - z)
+                px = x_proj * scale + cx
+                py = -y_proj * scale + cy
+                proj.append((px, py))
+            for i in range(len(proj)-1):
+                self.canvas.create_line(proj[i][0], proj[i][1], proj[i+1][0], proj[i+1][1], fill="#FFD700", width=3)
+            if line is self.teapot_lines[0] or line is self.teapot_lines[1] or line is self.teapot_lines[4]:
+                self.canvas.create_line(proj[-1][0], proj[-1][1], proj[0][0], proj[0][1], fill="#FFD700", width=3)
+        self.draw_direction_cube(rotation_matrix)
+
     def render_molecule(self):
+        if hasattr(self, 'show_teapot') and self.show_teapot:
+            self.render_teapot()
+            return
         self.canvas.delete("all")
         width, height = 600, 600
         
@@ -360,6 +426,7 @@ class MoleculeViewer:
 # 创建并运行程序
 if __name__ == "__main__":
     root = tk.Tk()
-    viewer = MoleculeViewer(root, "C1=CC=C(C=C1)C=O", "space_filling")
+    # 你可以在这里切换为teapot或SMILES
+    viewer = MoleculeViewer(root, "teapot", "space_filling")
     #viewer = MoleculeViewer(root, "C1=CC=C(C=C1)C=O", "ball_and_stick")
     root.mainloop()
