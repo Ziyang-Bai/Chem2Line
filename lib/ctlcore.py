@@ -215,7 +215,7 @@ def search_database(query, smiles_dict):
     return results
 
 class MoleculeViewer:
-    def __init__(self, root, smiles="C", lang_dict=None):
+    def __init__(self, root, smiles="C", model_type="ball_and_stick", lang_dict=None):
         self.root = root
         self.lang_dict = lang_dict or {}
         self.root.title(self.lang_dict.get("3d_molecule_viewer", "3D Molecule Viewer"))
@@ -227,7 +227,7 @@ class MoleculeViewer:
         self.angle_y = 0
         self.angle_z = 0
         self.scale = 100         # 缩放范围从50到500
-        self.perspective_d = 5   # 透视参数范围从1到20
+        self.perspective_d = 5   # 透视参数范围从1到20之间
 
         # 摄像机平移偏移量
         self.cam_offset_x = 0
@@ -240,6 +240,9 @@ class MoleculeViewer:
         # 鼠标拖动相关变量（平移）
         self.last_pan_x = 0
         self.last_pan_y = 0
+
+        # 模型类型
+        self.model_type = model_type
 
         # 创建控件
         self.create_controls()
@@ -254,11 +257,11 @@ class MoleculeViewer:
         control_frame.pack(pady=10)
 
         # 旋转/视图控制按钮
-        tk.Button(control_frame, text=self.lang_dict.get("reset_view", "重置视角"), command=self.reset_view).grid(row=0, column=1, padx=5)
-        tk.Button(control_frame, text=self.lang_dict.get("zoom_in", "缩放+"), command=self.zoom_in).grid(row=1, column=0, padx=5)
-        tk.Button(control_frame, text=self.lang_dict.get("zoom_out", "缩放-"), command=self.zoom_out).grid(row=1, column=2, padx=5)
-        tk.Button(control_frame, text=self.lang_dict.get("perspective_increase", "透视+"), command=lambda: self.adjust_perspective(1)).grid(row=2, column=0, padx=5)
-        tk.Button(control_frame, text=self.lang_dict.get("perspective_decrease", "透视-"), command=lambda: self.adjust_perspective(-1)).grid(row=2, column=2, padx=5)
+        tk.Button(control_frame, text=(self.lang_dict.get("reset_view") or "重置视角"), command=self.reset_view).grid(row=0, column=1, padx=5)
+        tk.Button(control_frame, text=(self.lang_dict.get("zoom_in") or "缩放+"), command=self.zoom_in).grid(row=1, column=0, padx=5)
+        tk.Button(control_frame, text=(self.lang_dict.get("zoom_out") or "缩放-"), command=self.zoom_out).grid(row=1, column=2, padx=5)
+        tk.Button(control_frame, text=(self.lang_dict.get("perspective_increase") or "透视+"), command=lambda: self.adjust_perspective(1)).grid(row=2, column=0, padx=5)
+        tk.Button(control_frame, text=(self.lang_dict.get("perspective_decrease") or "透视-"), command=lambda: self.adjust_perspective(-1)).grid(row=2, column=2, padx=5)
 
     def setup_mouse_controls(self):
         # 左键拖动旋转视角
@@ -276,18 +279,15 @@ class MoleculeViewer:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             raise ValueError("无效的SMILES字符串")
-        
-        # 生成3D坐标
         mol = Chem.AddHs(mol)
-        AllChem.EmbedMolecule(mol)
-        AllChem.MMFFOptimizeMolecule(mol)
-        
-        # 获取原子坐标和颜色
+        if hasattr(AllChem, 'EmbedMolecule'):
+            AllChem.EmbedMolecule(mol)
+        if hasattr(AllChem, 'MMFFOptimizeMolecule'):
+            AllChem.MMFFOptimizeMolecule(mol)
         conf = mol.GetConformer()
         self.atoms = np.array([conf.GetAtomPosition(i) for i in range(mol.GetNumAtoms())])
-        self.atom_colors = [self.get_atom_color(atom.GetSymbol()) for atom in mol.GetAtoms()]
-        
-        # 获取键信息，包含类型
+        # 保存原子颜色和符号
+        self.atom_colors = [(self.get_atom_color(atom.GetSymbol()), atom.GetSymbol()) for atom in mol.GetAtoms()]
         self.bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondTypeAsDouble())
                      for bond in mol.GetBonds()]
 
@@ -399,71 +399,119 @@ class MoleculeViewer:
         # 组合旋转矩阵：Y -> X -> Z
         return Rz @ Rx @ Ry
 
+    def get_vdw_radius(self, symbol):
+        vdw_radii = {
+            "H": 1.2,  # 氢
+            "C": 1.7,  # 碳
+            "N": 1.55, # 氮
+            "O": 1.52, # 氧
+            "F": 1.47, # 氟
+            "Cl": 1.75, # 氯
+            "Br": 1.85, # 溴
+            "I": 1.98, # 碘
+            "S": 1.8,  # 硫
+            "P": 1.8   # 磷
+        }
+        return vdw_radii.get(symbol, 1.5)
+
+    def draw_direction_cube(self, rotation_matrix):
+        """绘制右上角的方向立方体"""
+        size = 50  # 立方体大小
+        margin = 10  # 距离边缘的间距
+        center_x = 600 - size - margin
+        center_y = margin + size
+
+        # 定义立方体的顶点（局部坐标系）
+        cube_vertices = np.array([
+            [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],  # 后面四个顶点
+            [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]       # 前面四个顶点
+        ]) * (size / 2)
+
+        # 应用旋转矩阵
+        rotated_vertices = np.dot(cube_vertices, rotation_matrix.T)
+
+        # 投影到2D平面
+        projected_vertices = []
+        for vertex in rotated_vertices:
+            x_proj = vertex[0] + center_x
+            y_proj = -vertex[1] + center_y
+            projected_vertices.append((x_proj, y_proj))
+
+        # 定义立方体的边
+        cube_edges = [
+            (0, 1), (1, 2), (2, 3), (3, 0),  # 后面四条边
+            (4, 5), (5, 6), (6, 7), (7, 4),  # 前面四条边
+            (0, 4), (1, 5), (2, 6), (3, 7)   # 连接前后面的边
+        ]
+
+        # 绘制立方体的边
+        for edge in cube_edges:
+            start, end = edge
+            x1, y1 = projected_vertices[start]
+            x2, y2 = projected_vertices[end]
+            self.canvas.create_line(x1, y1, x2, y2, fill="#FFFFFF")
+
     def render_molecule(self):
         self.canvas.delete("all")
         width, height = 600, 600
-        
-        # 应用旋转矩阵
         rotation_matrix = self.get_rotation_matrix()
         rotated_coords = np.dot(self.atoms, rotation_matrix.T)
-        
-        # 先对键按照平均深度排序（远处先绘制）
+        # 比例模型缩放
+        if self.model_type == "space_filling":
+            scale_factor = 0.2
+            rotated_coords *= scale_factor
         sorted_bonds = sorted(
             self.bonds,
             key=lambda bond: (rotated_coords[bond[0], 2] + rotated_coords[bond[1], 2]) / 2
         )
-        for bond in sorted_bonds:
-            i, j, bond_type = bond
-            z1 = rotated_coords[i, 2]
-            z2 = rotated_coords[j, 2]
-            
-            # 计算透视投影
-            x1 = rotated_coords[i, 0] * self.perspective_d / (self.perspective_d - z1)
-            y1 = rotated_coords[i, 1] * self.perspective_d / (self.perspective_d - z1)
-            x2 = rotated_coords[j, 0] * self.perspective_d / (self.perspective_d - z2)
-            y2 = rotated_coords[j, 1] * self.perspective_d / (self.perspective_d - z2)
-            
-            # 转换到画布坐标（加入平移偏移量）
-            cx1 = x1 * self.scale + width/2 + self.cam_offset_x
-            cy1 = -y1 * self.scale + height/2 + self.cam_offset_y
-            cx2 = x2 * self.scale + width/2 + self.cam_offset_x
-            cy2 = -y2 * self.scale + height/2 + self.cam_offset_y
-            
-            if bond_type == 2:  # 双键，画两条平行线
-                # 计算垂直方向
-                dx = cx2 - cx1
-                dy = cy2 - cy1
-                length = (dx**2 + dy**2) ** 0.5
-                if length == 0:
-                    offset_x, offset_y = 0, 0
+        if self.model_type == "ball_and_stick":
+            for bond in sorted_bonds:
+                i, j, bond_type = bond
+                z1 = rotated_coords[i, 2]
+                z2 = rotated_coords[j, 2]
+                x1 = rotated_coords[i, 0] * self.perspective_d / (self.perspective_d - z1)
+                y1 = rotated_coords[i, 1] * self.perspective_d / (self.perspective_d - z1)
+                x2 = rotated_coords[j, 0] * self.perspective_d / (self.perspective_d - z2)
+                y2 = rotated_coords[j, 1] * self.perspective_d / (self.perspective_d - z2)
+                cx1 = x1 * self.scale + width/2 + self.cam_offset_x
+                cy1 = -y1 * self.scale + height/2 + self.cam_offset_y
+                cx2 = x2 * self.scale + width/2 + self.cam_offset_x
+                cy2 = -y2 * self.scale + height/2 + self.cam_offset_y
+                if bond_type == 2:
+                    dx = cx2 - cx1
+                    dy = cy2 - cy1
+                    length = (dx**2 + dy**2) ** 0.5
+                    if length == 0:
+                        offset_x, offset_y = 0, 0
+                    else:
+                        offset_x = -dy / length * 4
+                        offset_y = dx / length * 4
+                    self.canvas.create_line(cx1 + offset_x, cy1 + offset_y, cx2 + offset_x, cy2 + offset_y, fill="#404040", width=2)
+                    self.canvas.create_line(cx1 - offset_x, cy1 - offset_y, cx2 - offset_x, cy2 - offset_y, fill="#404040", width=2)
                 else:
-                    offset_x = -dy / length * 4  # 4像素偏移
-                    offset_y = dx / length * 4
-                self.canvas.create_line(cx1 + offset_x, cy1 + offset_y, cx2 + offset_x, cy2 + offset_y, fill="#404040", width=2)
-                self.canvas.create_line(cx1 - offset_x, cy1 - offset_y, cx2 - offset_x, cy2 - offset_y, fill="#404040", width=2)
-            else:
-                self.canvas.create_line(cx1, cy1, cx2, cy2, fill="#404040", width=2)
-        
-        # 对原子按照 z 坐标升序排序（远处先绘制，近处后绘制）
+                    self.canvas.create_line(cx1, cy1, cx2, cy2, fill="#404040", width=2)
+        # 绘制原子
         sorted_indices = np.argsort(rotated_coords[:, 2])
         for i in sorted_indices:
             x, y, z = rotated_coords[i]
-            
-            # 透视投影
             x_proj = x * self.perspective_d / (self.perspective_d - z)
             y_proj = y * self.perspective_d / (self.perspective_d - z)
-            
-            # 转换到画布坐标（加入平移偏移量）
             cx = x_proj * self.scale + width/2 + self.cam_offset_x
             cy = -y_proj * self.scale + height/2 + self.cam_offset_y
-            
-            # 根据原子类型调整大小
-            atom_size = max(3, 8 * (self.perspective_d / (self.perspective_d - z)))
+            if self.model_type == "ball_and_stick":
+                atom_size = max(3, 8 * (self.perspective_d / (self.perspective_d - z)))
+            elif self.model_type == "space_filling":
+                symbol = self.atom_colors[i][1] if isinstance(self.atom_colors[i], tuple) else 'C'
+                atom_size = self.get_vdw_radius(symbol) * self.scale / 10
+            else:
+                atom_size = 8
             self.canvas.create_oval(
                 cx - atom_size, cy - atom_size,
                 cx + atom_size, cy + atom_size,
-                fill=self.atom_colors[i], outline=""
+                fill=self.atom_colors[i] if isinstance(self.atom_colors[i], str) else self.atom_colors[i][0], outline=""
             )
+        # 绘制方向立方体
+        self.draw_direction_cube(rotation_matrix)
 
 def show_3d_viewer(smiles):
     root = tk.Tk()

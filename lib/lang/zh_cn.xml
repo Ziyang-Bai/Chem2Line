@@ -60,8 +60,7 @@
     <num_atoms>原子数</num_atoms>
     <num_bonds>键数</num_bonds>
     <num_rings>环数</num_rings>
-    <molecular_formula>分子式</molecular_formula>
-    <3d_molecule_viewer>3D 分子查看器</3d_molecule_viewer>
+    <molecular_formula>分子式</molecular_formula>    <molecule_viewer_3d>3D 分子查看器</molecule_viewer_3d>
     <reset_view>重置视角</reset_view>
     <zoom_in>缩放+</zoom_in>
     <zoom_out>缩放-</zoom_out>
