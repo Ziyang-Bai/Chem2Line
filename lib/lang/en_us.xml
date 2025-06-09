@@ -60,8 +60,7 @@
     <num_atoms>Number of Atoms</num_atoms>
     <num_bonds>Number of Bonds</num_bonds>
     <num_rings>Number of Rings</num_rings>
-    <molecular_formula>Molecular Formula</molecular_formula>
-    <3d_molecule_viewer>3D Molecule Viewer</3d_molecule_viewer>
+    <molecular_formula>Molecular Formula</molecular_formula>    <molecule_viewer_3d>3D Molecule Viewer</molecule_viewer_3d>
     <reset_view>Reset View</reset_view>
     <zoom_in>Zoom In</zoom_in>
     <zoom_out>Zoom Out</zoom_out>

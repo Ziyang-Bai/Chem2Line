@@ -114,10 +114,10 @@ def show_long_history():
         save_history()
         update_history_menu(history_menu, history)
 
-    delete_button = tk.Button(history_window, text=lang_dict.get("delete", "删除"), command=delete_selected)
+    delete_button = tk.Button(history_window, text=(lang_dict.get("delete") or "删除"), command=delete_selected)
     delete_button.pack(pady=10)
 
-    clear_button = tk.Button(history_window, text=lang_dict.get("clear_history", "清空历史记录"), command=clear_history)
+    clear_button = tk.Button(history_window, text=(lang_dict.get("clear_history") or "清空历史记录"), command=clear_history)
     clear_button.pack(pady=10)
 
 def delete_history_entry(entry):
@@ -488,38 +488,70 @@ def show_config_window():
     config_window.iconbitmap("lib/media/nctl.ico")
 
     # 语言配置
-    lang_label = tk.Label(config_window, text=lang_dict.get("select_language", "选择语言："), font=("Arial", 12))
+    lang_label = tk.Label(config_window, text=lang_dict.get("select_language") or "选择语言：", font=("Arial", 12))
     lang_label.pack(pady=10)
     lang_var = StringVar(config_window)
-    lang_var.set(config['language'])
-    lang_options = [load_language(f'lib/lang/{lang}.xml').get("language_name", lang) for lang in config['available_languages']]
+    lang_val = config.get('language', 'en_us')
+    if not isinstance(lang_val, str):
+        lang_val = 'en_us'
+    lang_var.set(lang_val)
+    available_langs = config.get('available_languages', ['en_us'])
+    if not isinstance(available_langs, list):
+        available_langs = ['en_us']
+    lang_options = [load_language(f'lib/lang/{lang}.xml').get("language_name", lang) for lang in available_langs]
     lang_menu = OptionMenu(config_window, lang_var, *lang_options)
     lang_menu.pack(pady=10)
 
     # 默认数据库配置
-    db_label = tk.Label(config_window, text=lang_dict.get("select_database", "选择默认数据库："), font=("Arial", 12))
+    db_label = tk.Label(config_window, text=lang_dict.get("select_database") or "选择默认数据库：", font=("Arial", 12))
     db_label.pack(pady=10)
     db_var = StringVar(config_window)
-    db_var.set(os.path.basename(database_path))
+    db_val = config.get('default_database', database_path)
+    if not isinstance(db_val, str):
+        db_val = database_path
+    db_var.set(os.path.basename(db_val))
     db_files = [f for f in os.listdir('lib/db') if f.endswith('.xml')]
     db_menu = OptionMenu(config_window, db_var, *db_files)
     db_menu.pack(pady=10)
 
     # 是否记录历史记录
-    record_history_var = tk.BooleanVar(value=config.get('record_history', True))
-    record_history_check = tk.Checkbutton(config_window, text=lang_dict.get("record_history", "记录历史记录"), variable=record_history_var)
+    record_history_val = config.get('record_history', True)
+    if not isinstance(record_history_val, bool):
+        record_history_val = str(record_history_val).lower() == 'true'
+    record_history_var = tk.BooleanVar(value=record_history_val)
+    record_history_check = tk.Checkbutton(config_window, text=lang_dict.get("record_history") or "记录历史记录", variable=record_history_var)
     record_history_check.pack(pady=10)
 
+    # 3D模型配置
+    model3d_label = tk.Label(config_window, text=lang_dict.get("select_3d_model") or "选择3D模型：", font=("Arial", 12))
+    model3d_label.pack(pady=10)
+    model3d_var_cfg = StringVar(config_window)
+    model3d_val = config.get('default_3d_model', 'ball_and_stick')
+    if not isinstance(model3d_val, str):
+        model3d_val = 'ball_and_stick'
+    model3d_var_cfg.set(model3d_val)
+    model3d_menu_cfg = OptionMenu(config_window, model3d_var_cfg, 'ball_and_stick', 'space_filling')
+    model3d_menu_cfg.pack(pady=10)
+
     def save_config_changes():
-        selected_lang = config['available_languages'][lang_options.index(lang_var.get())]
+        # 语言
+        selected_lang = 'en_us'
+        for idx, lang in enumerate(available_langs):
+            if lang_options[idx] == lang_var.get():
+                selected_lang = lang
+                break
         config['language'] = selected_lang
+        # 数据库
         config['default_database'] = f'lib/db/{db_var.get()}'
+        # 历史
         config['record_history'] = record_history_var.get()
+        # 3D模型
+        config['default_3d_model'] = model3d_var_cfg.get()
         save_config(config)
-        messagebox.showinfo(lang_dict.get("config_saved_title", "配置已保存"), lang_dict.get("config_saved_message", "配置已保存，请重启应用以应用更改。"))
+        messagebox.showinfo(lang_dict.get("config_saved_title") or "配置已保存", lang_dict.get("config_saved_message") or "配置已保存，请重启应用以应用更改。")
         config_window.destroy()
 
-    save_button = tk.Button(config_window, text=lang_dict.get("save_button", "保存"), command=save_config_changes)
+    save_button = tk.Button(config_window, text=lang_dict.get("save_button") or "保存", command=save_config_changes)
     save_button.pack(pady=20)
 
 # 初始化配置和语言
@@ -575,7 +607,17 @@ database_menu.add_cascade(label=lang_dict.get("common_databases", "常用数据�
 
 menu_bar.add_cascade(label=lang_dict.get("database", "数据库"), menu=database_menu)
 
-
+# 3D模型菜单
+model3d_menu = Menu(menu_bar, tearoff=0)
+def get_default_3d_model():
+    val = config.get('default_3d_model', 'ball_and_stick')
+    if not isinstance(val, str):
+        return 'ball_and_stick'
+    return val
+model3d_var = StringVar(value=get_default_3d_model())
+model3d_menu.add_radiobutton(label=(lang_dict.get('ball_and_stick') or '球棍模型'), variable=model3d_var, value='ball_and_stick')
+model3d_menu.add_radiobutton(label=(lang_dict.get('space_filling') or '比例模型'), variable=model3d_var, value='space_filling')
+menu_bar.add_cascade(label=(lang_dict.get('model3d_menu') or '3D模型'), menu=model3d_menu)
 
 # 创建工具栏菜单
 overlay_menu = Menu(menu_bar, tearoff=0)
@@ -618,6 +660,13 @@ submit_button.grid(row=0, column=0, padx=5)
 # 创建显示3D视图按钮
 view_3d_button = tk.Button(button_frame, text=lang_dict.get("view_3d_button", "显示3D视图"), font=("Arial", 14), state=tk.DISABLED)
 view_3d_button.grid(row=0, column=1, padx=5)
+
+def show_3d_viewer(smiles):
+    from lib.ctlcore import MoleculeViewer
+    win = tk.Toplevel(root)
+    win.title("3D Viewer")
+    viewer = MoleculeViewer(win, smiles, model_type=model3d_var.get(), lang_dict=lang_dict)
+    win.mainloop()
 
 # 创建分析按钮
 analyze_button = tk.Button(button_frame, text=lang_dict.get("analyze_button", "分析分子"), font=("Arial", 14), command=on_analyze, state=tk.DISABLED)

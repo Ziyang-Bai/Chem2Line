@@ -53,9 +53,8 @@
     <molecular_weight>Molekulargewicht</molecular_weight>
     <num_atoms>Anzahl der Atome</num_atoms>
     <num_bonds>Anzahl der Bindungen</num_bonds>
-    <num_rings>Anzahl der Ringe</num_rings>
-    <molecular_formula>Molekularformel</molecular_formula>
-    <3d_molecule_viewer>3D Molekülbetrachter</3d_molecule_viewer>
+    <num_rings>Anzahl der Ringe</num_rings>    <molecular_formula>Molekularformel</molecular_formula>
+    <molecule_viewer_3d>3D Molekülbetrachter</molecule_viewer_3d>
     <reset_view>Ansicht zurücksetzen</reset_view>
     <zoom_in>Vergrößern</zoom_in>
     <zoom_out>Verkleinern</zoom_out>

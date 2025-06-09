@@ -427,6 +427,6 @@ class MoleculeViewer:
 if __name__ == "__main__":
     root = tk.Tk()
     # 你可以在这里切换为teapot或SMILES
-    viewer = MoleculeViewer(root, "teapot", "space_filling")
-    #viewer = MoleculeViewer(root, "C1=CC=C(C=C1)C=O", "ball_and_stick")
+    #viewer = MoleculeViewer(root, "teapot", "space_filling")
+    viewer = MoleculeViewer(root, "C1=CC=C(C=C1)C=O", "ball_and_stick")
     root.mainloop()

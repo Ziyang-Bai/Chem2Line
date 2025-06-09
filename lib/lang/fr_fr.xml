@@ -59,9 +59,8 @@
     <molecular_weight>Poids moléculaire</molecular_weight>
     <num_atoms>Nombre d'atomes</num_atoms>
     <num_bonds>Nombre de liaisons</num_bonds>
-    <num_rings>Nombre d'anneaux</num_rings>
-    <molecular_formula>Formule moléculaire</molecular_formula>
-    <3d_molecule_viewer>Visualiseur de molécule 3D</3d_molecule_viewer>
+    <num_rings>Nombre d'anneaux</num_rings>    <molecular_formula>Formule moléculaire</molecular_formula>
+    <molecule_viewer_3d>Visualiseur de molécule 3D</molecule_viewer_3d>
     <reset_view>Réinitialiser la vue</reset_view>
     <zoom_in>Zoom avant</zoom_in>
     <zoom_out>Zoom arrière</zoom_out>
