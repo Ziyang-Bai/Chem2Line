@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chem2Line WebEz Edition</title>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; background-color: white; }
+        #header { width: 100%; text-align: center; padding: 10px; background-color: #f0f0f0; font-size: 20px; font-weight: bold; border-bottom: 1px solid black; }
+        #main { display: flex; flex-direction: row; flex-grow: 1; }
+        #left-panel { width: 50%; display: flex; flex-direction: column; align-items: center; border-right: 1px solid black; }
+        #right-panel { width: 50%; display: flex; flex-direction: column; align-items: center; }
+        #controls { margin: 10px; }
+        #smiles-canvas { width: 100%; height: auto; border: 1px solid black; background-color: white; }
+        canvas { border: 1px solid black; background-color: white; }
+        #joystick-row { display: flex; align-items: center; margin-top: 10px; }
+        #joystick-container, #camera-joystick-container {
+            width: 100px; height: 100px; background: rgba(0, 0, 0, 0.1); border-radius: 50%; 
+            position: relative;
+        }
+        #joystick, #camera-joystick {
+            position: absolute; width: 40px; height: 40px; background: rgba(0, 0, 0, 0.5); border-radius: 50%; top: 30px; left: 30px;
+        }
+        #zoom-slider { margin: 0 20px; width: 150px; }
+        #update-tip {
+            display:none;
+            position:fixed;
+            top:30px;
+            left:50%;
+            transform:translateX(-50%);
+            background:#007bff;
+            color:#fff;
+            padding:16px 32px;
+            border-radius:8px;
+            box-shadow:0 2px 12px rgba(0,0,0,0.15);
+            font-size:20px;
+            z-index:99999;
+        }
+        #update-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.25);
+            z-index: 99999;
+        }
+        #update-modal .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 400px;
+            min-width: 320px;
+            margin: 80px auto 0 auto;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+            padding: 0 0 24px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #update-modal .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 24px 0 8px 0;
+            color: #007bff;
+        }
+        #update-modal .modal-version {
+            font-size: 15px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        #update-modal .modal-log {
+            width: 90%;
+            max-height: 180px;
+            min-height: 60px;
+            background: #f7f7f7;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 18px;
+            padding: 10px 12px;
+            overflow-y: auto;
+            white-space: pre-line;
+        }
+        #update-modal .modal-close {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            padding: 7px 32px;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">Chem2Line WebEz Edition</div>
+    <div id="update-tip">You Got A New Version!</div>
+    <div id="main">
+        <div id="left-panel">
+                        <div style="width:100%; padding:8px; box-sizing:border-box;">
+                            <h2>分子显示</h2>
+                            <div id="molecule">
+                                <div id="drawing"></div>
+                                <div id="can_smiles" style="margin-top:6px; color:#333;"></div>
+                            </div>
+                            <div style="margin-top:8px;">
+                                输入：<input id="smiles_input" type="text" value="CCO" style="width:60%;"> <button onclick="loadMolecule()">加载</button>
+                            </div>
+                            <div id="descrs" style="margin-top:8px;"></div>
+                            <div id="canvas-div" style="margin-top:8px;">
+                                <!-- 使用单一 SVG 显示（移除 canvas，避免重复显示） -->
+                            </div>
+                            <div style="margin-top:6px;">
+                                <button onclick="copySVG()">复制 图片 (PNG)</button>
+                                <button onclick="copySVGSource()" style="margin-left:8px;">复制 SVG 源</button>
+                                <button onclick="openSVGTab()" style="margin-left:8px;">在新标签打开 SVG</button>
+                                <button id="get-name-btn" onclick="fetchStandardName()" style="margin-left:8px;">获取标准命名（IUPAC）</button>
+                            </div>
+                            <div id="standard_name" style="margin-top:8px; color:#222;"></div>
+                            <div id="isomers" style="margin-top:8px; color:#222;"></div>
+                            <div style="margin-top:8px;">
+                                <label for="canvasSizeInput">画布尺寸（px，正方形）</label>
+                                <input id="canvasSizeInput" type="number" min="100" max="1600" step="10" style="margin-left:8px; width:100px;" />
+                                <button onclick="applyCanvasSize()" style="margin-left:8px;">应用</button>
+                            </div>
+
+                            <div style="margin-top:8px;">
+                                <input type="checkbox" id="addAtomIndices" onclick="option_changed(this);"> <label for="addAtomIndices">显示原子索引</label>
+                                <input type="checkbox" id="addBondIndices" onclick="option_changed(this);" style="margin-left:12px;"> <label for="addBondIndices">显示键索引</label>
+                                <input type="checkbox" id="addStereoAnnotation" onclick="option_changed(this);" style="margin-left:12px;"> <label for="addStereoAnnotation">显示立体注释</label>
+                            </div>
+                            <div style="margin-top:8px;">
+                                <input type="checkbox" id="explicitMethyl" onclick="option_changed(this);"> <label for="explicitMethyl">显示显式氢</label>
+                            </div>
+                            <div style="margin-top:8px;">
+                                <label for="legend">图例（legend）</label>
+                                <input type="text" id="legend" onkeyup="option_changed(this);" style="margin-left:8px; width:40%;">
+                            </div>
+                            <div style="margin-top:8px;">
+                                <label for="legendFontSize">图例字体大小</label>
+                                <input type="text" id="legendFontSize" onkeyup="option_changed(this);" style="margin-left:8px; width:80px;">
+                                <label for="bondLineWidth" style="margin-left:12px;">键线宽度</label>
+                                <input type="number" id="bondLineWidth" onkeyup="option_changed(this);" style="margin-left:8px; width:80px;">
+                            </div>
+
+                            <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
+                                <strong>缩写（Abbreviations）</strong><br>
+                                <input type="checkbox" id="useAbbreviations" onclick="abbreviation_option_changed(this);"> <label for="useAbbreviations">使用缩写</label>
+                                <input type="checkbox" id="useLinkers" onclick="abbreviation_option_changed(this);" style="margin-left:12px;"> <label for="useLinkers">使用连接片 (Linkers)</label>
+                                <label for="maxCoverage" style="margin-left:12px;">最大覆盖率</label>
+                                <input type="text" id="maxCoverage" value="0.4" onclick="abbreviation_option_changed(this);" style="margin-left:6px; width:60px;">
+                            </div>
+                        </div>
+            <div id="desktop-version-info" style="margin-top: 20px; text-align: center; font-size: 14px; color: gray;">
+                <p>获取 <a href="https://github.com/Ziyang-Bai/Chem2Line" target="_blank" style="color: blue; text-decoration: none;">Chem2Line桌面版</a> 使用更完整的功能！</p>
+                <p>开发者 <a href="https://Ziyang-Bai.com" target="_blank" style="color: blue; text-decoration: none;">Ziyang-Bai</a></p>
+                <p>访问 <a href="https://github.com/Ziyang-Bai/Chem2Line" target="_blank" style="color: blue; text-decoration: none;">软件仓库</a> 保持领先！</p>
+            </div>
+        </div>
+        <div id="right-panel">
+            <canvas id="viewer"></canvas>
+            <div id="joystick-row">
+                <div id="joystick-container">
+                    <div id="joystick"></div>
+                </div>
+                <input id="zoom-slider" type="range" min="1" max="50" value="20">
+                <div id="camera-joystick-container">
+                    <div id="camera-joystick"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="update-modal">
+        <div class="modal-content">
+            <div class="modal-title" id="update-modal-title">🎉 You Got A New Version!</div>
+            <div class="modal-version" id="update-modal-version"></div>
+            <div class="modal-log" id="update-modal-log"></div>
+            <button class="modal-close" onclick="closeUpdateModal()">关闭</button>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+    <script>
+        // Three.js 初始化
+        const smilesImageDiv = document.getElementById("smiles-image");
+        const canvas = document.getElementById("viewer");
+
+        // 画布尺寸（单一数值，正方形），从 localStorage 读取或使用默认 600
+        let canvasSize = parseInt(localStorage.getItem('chem2line_canvas_size')) || 400;
+        // 将尺寸应用到 canvas
+        canvas.style.width = canvas.style.height = canvasSize + 'px';
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const light = new THREE.PointLight(0xffffff, 1.5);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+
+        const atomColors = {
+            H: 0xffffff, C: 0x00ffff, N: 0x0000ff, O: 0xff0000, F: 0x00ff00,
+            Cl: 0x00ff00, Br: 0x8b0000, I: 0x9400d3, S: 0xffff00, P: 0xffa500
+        };
+        const bondColor = 0x808080;
+
+        let moleculeGroup = new THREE.Group();
+        scene.add(moleculeGroup);
+        camera.position.z = 20;
+
+        // RDKit 初始化
+        let RDKitModule = null;
+        initRDKitModule().then(function (m) {
+            RDKitModule = m;
+            console.log('RDKit ready', RDKitModule.version());
+        }).catch(err => console.error(err));
+
+        // 渲染循环（不重复设置大小，大小由 applyCanvasSize 管理）
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // 应用并保存画布尺寸（单一正方形尺寸）
+        function applyCanvasSize() {
+            const input = document.getElementById('canvasSizeInput');
+            if (!input) return;
+            let v = parseInt(input.value);
+            if (isNaN(v) || v < 100) v = 600;
+            if (v > 1600) v = 1600;
+            canvasSize = v;
+            localStorage.setItem('chem2line_canvas_size', String(canvasSize));
+            // apply to canvas and renderer
+            canvas.style.width = canvas.style.height = canvasSize + 'px';
+            canvas.width = canvasSize; canvas.height = canvasSize;
+            renderer.setSize(canvasSize, canvasSize);
+            // if SVG exists, reapply size wrapper
+            if (window.__last_svg) setSVG(window.__last_svg);
+        }
+
+        // 渲染分子（复用之前渲染逻辑）
+        function renderMolecule(data) {
+            moleculeGroup.clear();
+            const { atoms, bonds } = data;
+            atoms.forEach(atom => {
+                const geometry = new THREE.SphereGeometry(atom.symbol === 'H' ? 0.3 : 0.5, 24, 24);
+                const material = new THREE.MeshPhongMaterial({ color: atomColors[atom.symbol] || 0xff69b4 });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(atom.x, atom.y, atom.z);
+                moleculeGroup.add(sphere);
+            });
+            bonds.forEach(bond => {
+                const start = bond.start, end = bond.end;
+                const dir = new THREE.Vector3(bond.direction.x, bond.direction.y, bond.direction.z);
+                const length = dir.length();
+                const axis = dir.clone().normalize();
+                const up = new THREE.Vector3(0, 1, 0);
+                const quaternion = new THREE.Quaternion().setFromUnitVectors(up, axis);
+                const center = new THREE.Vector3((start.x + end.x) / 2, (start.y + end.y) / 2, (start.z + end.z) / 2);
+                const bondType = Math.round(bond.type || 1);
+                if (bond.aromatic) {
+                    const geom = new THREE.CylinderGeometry(0.05, 0.05, length, 12);
+                    const mat = new THREE.MeshPhongMaterial({ color: 0xA0522D });
+                    const m = new THREE.Mesh(geom, mat);
+                    m.position.copy(center);
+                    m.setRotationFromQuaternion(quaternion);
+                    moleculeGroup.add(m);
+                } else if (bondType > 1) {
+                    let perp = new THREE.Vector3(dir.y, -dir.x, 0);
+                    if (perp.length() < 1e-3) perp = new THREE.Vector3(0, dir.z, -dir.y);
+                    perp.normalize().multiplyScalar(0.15);
+                    for (let k = 0; k < bondType; k++) {
+                        const offset = k - Math.floor((bondType - 1) / 2);
+                        const geom = new THREE.CylinderGeometry(0.08, 0.08, length, 12);
+                        const mat = new THREE.MeshPhongMaterial({ color: bondColor });
+                        const m = new THREE.Mesh(geom, mat);
+                        m.position.set(center.x + offset * perp.x, center.y + offset * perp.y, center.z + offset * perp.z);
+                        m.setRotationFromQuaternion(quaternion);
+                        moleculeGroup.add(m);
+                    }
+                } else {
+                    const geom = new THREE.CylinderGeometry(0.12, 0.12, length, 12);
+                    const mat = new THREE.MeshPhongMaterial({ color: bondColor });
+                    const m = new THREE.Mesh(geom, mat);
+                    m.position.copy(center);
+                    m.setRotationFromQuaternion(quaternion);
+                    moleculeGroup.add(m);
+                }
+            });
+        }
+
+        // 将 RDKit 生成的 SVG 放到左侧
+        function setSVG(svgText) {
+            // 强制把 svg 标记的尺寸设为 canvasSize x canvasSize
+            try {
+                let modified = svgText.replace(/<svg([^>]*)>/i, function(m, g1){
+                    let attrs = g1 || '';
+                    attrs = attrs.replace(/\swidth\s*=\s*"[^"]*"/ig, '');
+                    attrs = attrs.replace(/\sheight\s*=\s*"[^"]*"/ig, '');
+                    attrs = attrs.replace(/\sstyle\s*=\s*"[^"]*"/ig, '');
+                    return '<svg' + attrs + ' width="' + canvasSize + '" height="' + canvasSize + '" style="width:' + canvasSize + 'px;height:' + canvasSize + 'px;">';
+                });
+                const drawing = document.getElementById('drawing');
+                if (drawing) {
+                    drawing.outerHTML = "<div id='drawing'>" + modified + "</div>";
+                } else {
+                    smilesImageDiv.innerHTML = modified;
+                }
+            } catch (e) {
+                console.warn('setSVG failed to modify svg size', e);
+                const drawing = document.getElementById('drawing');
+                if (drawing) drawing.outerHTML = "<div id='drawing'>" + svgText + "</div>";
+            }
+        }
+
+        // Helper: 从 PubChem property JSON 中提取可能的 SMILES 字段
+        function extractSmilesFromProperty(propJson) {
+            try {
+                const p = propJson && propJson.PropertyTable && propJson.PropertyTable.Properties && propJson.PropertyTable.Properties[0];
+                if (!p) return null;
+                return p.IsomericSMILES || p.SMILES || p.SMILE || p.ConnectivitySMILES || p.Smiles || null;
+            } catch (e) { return null; }
+        }
+
+                // 从化学式获取 CID（支持 Waiting / ListKey 轮询）
+                async function fetchCidsForFormula(formula, maxWaitSeconds = 20) {
+                    try {
+                        const base = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/';
+                        const url = base + encodeURIComponent(formula) + '/cids/JSON';
+                        let r = await fetch(url);
+                        if (!r.ok) return null;
+                        let j = await r.json();
+                        if (j && j.Waiting && j.ListKey) {
+                            const listKey = j.ListKey;
+                            const pollUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/listkey/' + encodeURIComponent(listKey) + '/cids/JSON';
+                            const start = Date.now();
+                            while ((Date.now() - start) / 1000 < maxWaitSeconds) {
+                                await new Promise(res => setTimeout(res, 1000));
+                                try { r = await fetch(pollUrl); } catch (e) { continue; }
+                                if (!r.ok) continue;
+                                j = await r.json();
+                                if (j && j.IdentifierList && j.IdentifierList.CID) return j.IdentifierList.CID;
+                                if (j && j.Waiting) continue;
+                            }
+                            return null;
+                        }
+                        return j?.IdentifierList?.CID || null;
+                    } catch (e) { return null; }
+                }
+
+                // 批量从 CID 列表获取 SMILES（返回 [{cid, smiles}]）
+                async function fetchSmilesForCids(cids, batchSize = 50) {
+                    const out = [];
+                    try {
+                        for (let i = 0; i < cids.length; i += batchSize) {
+                            const chunk = cids.slice(i, i + batchSize);
+                            const url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + chunk.join(',') + '/property/IsomericSMILES,SMILES,ConnectivitySMILES/JSON';
+                            try {
+                                const r = await fetch(url);
+                                if (!r.ok) continue;
+                                const j = await r.json();
+                                const props = j?.PropertyTable?.Properties || [];
+                                for (const p of props) {
+                                    const cid = p.CID;
+                                    const smi = p.IsomericSMILES || p.SMILES || p.ConnectivitySMILES || p.Smiles || null;
+                                    if (smi) out.push({ cid: cid, smiles: smi, prop: p });
+                                }
+                            } catch (e) { continue; }
+                        }
+                    } catch (e) { }
+                    return out;
+                }
+
+                // 处理 CID 列表：若只有 1 个 SMILES 直接加载；若多个则展示同分异构体供用户选择
+                async function handleCidsList(cids, sourceLabel) {
+                    if (!cids || !cids.length) return false;
+                    const maxShow = 12;
+                    const sample = cids.slice(0, Math.min(cids.length, 100));
+                    const isomers = await fetchSmilesForCids(sample, 50);
+                    if (!isomers || isomers.length === 0) return false;
+                    // 若只有一项，直接加载
+                    if (isomers.length === 1) {
+                        const smi = isomers[0].smiles;
+                        const inputEl = document.getElementById('smiles_input');
+                        const status = document.getElementById('standard_name');
+                        if (inputEl) inputEl.value = smi;
+                        if (status) status.innerText = '从 PubChem（' + sourceLabel + '）获取到 SMILES';
+                        callback(smi, true);
+                        return true;
+                    }
+                    // 多个：展示
+                    displayIsomers(isomers.slice(0, Math.min(isomers.length, maxShow)));
+                    return true;
+                }
+
+                // 在界面显示同分异构体缩略（允许加载）
+                function displayIsomers(isomers) {
+                    const container = document.getElementById('isomers');
+                    if (!container) return;
+                    container.innerHTML = '';
+                    const list = document.createElement('div');
+                    list.style.display = 'flex';
+                    list.style.flexWrap = 'wrap';
+                    list.style.gap = '8px';
+                    for (const it of isomers) {
+                        const box = document.createElement('div');
+                        box.style.border = '1px solid #ddd';
+                        box.style.padding = '6px';
+                        box.style.width = '140px';
+                        box.style.boxSizing = 'border-box';
+                        box.style.background = '#fafafa';
+
+                        const title = document.createElement('div');
+                        title.style.fontSize = '12px';
+                        title.style.wordBreak = 'break-all';
+                        title.innerText = 'CID:' + it.cid + '  ' + (it.smiles || '');
+                        box.appendChild(title);
+
+                        const thumbWrap = document.createElement('div');
+                        thumbWrap.style.width = '120px';
+                        thumbWrap.style.height = '120px';
+                        thumbWrap.style.overflow = 'hidden';
+                        thumbWrap.style.display = 'flex';
+                        thumbWrap.style.alignItems = 'center';
+                        thumbWrap.style.justifyContent = 'center';
+                        thumbWrap.style.marginTop = '6px';
+                        if (RDKitModule) {
+                            try {
+                                const m = RDKitModule.get_mol(it.smiles);
+                                let svg = '';
+                                try { if (m && typeof m.get_svg === 'function') svg = m.get_svg(); } catch (e) { svg = ''; }
+                                if (svg) {
+                                    // 缩小版 SVG
+                                    svg = svg.replace(/<svg([^>]*)>/i, function (m, g1) {
+                                        return '<svg' + (g1 || '') + ' width="120" height="120" style="width:120px;height:120px;">';
+                                    });
+                                    thumbWrap.innerHTML = svg;
+                                }
+                                try { m.delete(); } catch (e) { }
+                            } catch (e) { thumbWrap.innerText = it.smiles; }
+                        } else {
+                            thumbWrap.innerText = it.smiles;
+                        }
+                        box.appendChild(thumbWrap);
+
+                        const btn = document.createElement('button');
+                        btn.innerText = '加载';
+                        btn.style.marginTop = '6px';
+                        btn.onclick = function () {
+                            const inputEl = document.getElementById('smiles_input');
+                            if (inputEl) inputEl.value = it.smiles;
+                            const status = document.getElementById('standard_name');
+                            if (status) status.innerText = '已加载 CID:' + it.cid;
+                            callback(it.smiles, true);
+                        };
+                        box.appendChild(btn);
+
+                        list.appendChild(box);
+                    }
+                    container.appendChild(list);
+                }
+
+        // 当前状态
+        let currentCanonical = null;
+        let last3DData = null;
+
+        // Demo helper: 从表单读取选项
+        function form_to_details(details) {
+            var controls = ["addAtomIndices", "addBondIndices", "explicitMethyl", "addStereoAnnotation"];
+            for (i in controls) {
+                var control = controls[i];
+                details[control] = !!document.getElementById(control) && document.getElementById(control).checked;
+            }
+            var texts = ["legend", "bondLineWidth", "legendFontSize"];
+            for (i in texts) {
+                var control = texts[i];
+                if (document.getElementById(control)) details[control] = document.getElementById(control).value;
+            }
+        }
+
+        function draw_with_highlights(mol, details) {
+            try {
+                form_to_details(details);
+                var tdetails = JSON.stringify(details);
+                var svg = "";
+                if (typeof mol.get_svg_with_highlights === 'function') {
+                    svg = mol.get_svg_with_highlights(tdetails);
+                }
+                if (!svg && typeof mol.get_svg === 'function') {
+                    svg = mol.get_svg();
+                }
+                if (svg && svg !== "") {
+                    // 保存原始 SVG 用于复制
+                    window.__last_svg = svg;
+                    var ob = document.getElementById("drawing");
+                    if (ob) ob.outerHTML = "<div id='drawing'>" + svg + "</div>";
+                }
+            } catch (e) {
+                console.warn('draw_with_highlights failed', e);
+            }
+        }
+
+        function copySVG() {
+            const svg = window.__last_svg || document.getElementById('drawing')?.innerHTML || '';
+            if (!svg) return alert('没有可复制的 SVG');
+
+            // 渲染为 PNG，并只将 PNG 写入剪贴板以避免多 ClipboardItem 限制
+            try {
+                const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(svgBlob);
+                const img = new Image();
+                img.onload = async function () {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth || img.width || 800;
+                        canvas.height = img.naturalHeight || img.height || 600;
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+
+                        canvas.toBlob(async function (blob) {
+                            try {
+                                if (window.navigator.clipboard && window.ClipboardItem) {
+                                    // 仅写入 PNG
+                                    if (blob) {
+                                        const item = new ClipboardItem({ 'image/png': blob });
+                                        await navigator.clipboard.write([item]);
+                                        alert('图片已复制到剪贴板（PNG）');
+                                    } else {
+                                        alert('生成 PNG 失败');
+                                    }
+                                } else {
+                                    const pngUrl = URL.createObjectURL(blob);
+                                    window.open(pngUrl, '_blank');
+                                    alert('浏览器不支持直接复制图片，已在新标签打开 PNG，右键复制或保存。');
+                                }
+                            } catch (e) {
+                                alert('复制图片失败: ' + e);
+                            } finally {
+                                URL.revokeObjectURL(url);
+                            }
+                        }, 'image/png');
+                    } catch (e) {
+                        URL.revokeObjectURL(url);
+                        alert('处理 SVG 失败: ' + e);
+                    }
+                };
+                img.onerror = function (e) {
+                    URL.revokeObjectURL(url);
+                    alert('SVG 转图片加载失败');
+                };
+                img.src = url;
+            } catch (e) {
+                alert('复制失败: ' + e);
+            }
+        }
+
+        function copySVGSource() {
+            const svg = window.__last_svg || document.getElementById('drawing')?.innerHTML || '';
+            if (!svg) return alert('没有可复制的 SVG');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(svg).then(() => alert('SVG 源已复制到剪贴板'), (e) => alert('复制失败: ' + e));
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = svg;
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); alert('SVG 源已复制到剪贴板'); } catch (e) { alert('复制失败'); }
+                ta.remove();
+            }
+        }
+
+        // 在新标签页打开当前 SVG（使用 blob URL）
+        function openSVGTab() {
+            const svg = window.__last_svg || document.getElementById('drawing')?.innerHTML || '';
+            if (!svg) return alert('当前没有可打开的 SVG');
+            try {
+                let svgText = svg;
+                if (!/^\s*<\?xml/i.test(svgText)) {
+                    svgText = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgText;
+                }
+                const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const w = window.open(url, '_blank');
+                if (!w) {
+                    URL.revokeObjectURL(url);
+                    return alert('弹出窗口被阻止，请允许弹窗或手动复制 SVG');
+                }
+                // 延迟释放对象 URL，给新标签加载时间
+                setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 20000);
+            } catch (e) {
+                alert('打开 SVG 失败: ' + e);
+            }
+        }
+
+        // 获取标准命名（IUPAC）——前端直接查询 PubChem（优先使用 InChIKey）
+        async function fetchStandardName() {
+            const display = document.getElementById('standard_name');
+            display.innerText = '查询中...';
+            let smi = (document.getElementById('can_smiles') && document.getElementById('can_smiles').innerText) || document.getElementById('smiles_input').value || '';
+            if (!smi) { display.innerText = '请输入 SMILES 后重试'; return; }
+            if (!RDKitModule) { display.innerText = 'RDKit 未就绪，请等待'; return; }
+
+            try {
+                const mol = RDKitModule.get_mol(smi);
+                let inchikey = null;
+                try { if (typeof mol.get_inchi_key === 'function') inchikey = mol.get_inchi_key(); } catch (e) { inchikey = null; }
+
+                async function fetchPubChemByInchiKey(key) {
+                    const base = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/';
+                    try {
+                        const p = base + encodeURIComponent(key) + '/property/IUPACName/JSON';
+                        const r = await fetch(p);
+                        if (r.ok) {
+                            const j = await r.json();
+                            const name = j && j.PropertyTable && j.PropertyTable.Properties && j.PropertyTable.Properties[0] && j.PropertyTable.Properties[0].IUPACName;
+                            if (name) return { success: true, name, source: 'pubchem_inchikey' };
+                        }
+                        const sUrl = base + encodeURIComponent(key) + '/synonyms/JSON';
+                        const r2 = await fetch(sUrl);
+                        if (r2.ok) {
+                            const j2 = await r2.json();
+                            const syns = j2 && j2.InformationList && j2.InformationList.Information && j2.InformationList.Information[0] && j2.InformationList.Information[0].Synonym || [];
+                            if (syns && syns.length) return { success: true, name: syns[0], synonyms: syns, source: 'pubchem_inchikey_synonyms' };
+                        }
+                    } catch (e) { }
+                    return { success: false };
+                }
+
+                async function fetchPubChemBySmiles(smiles) {
+                    const base = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/';
+                    try {
+                        const es = encodeURIComponent(smiles);
+                        const p = base + es + '/property/IUPACName/JSON';
+                        const r = await fetch(p);
+                        if (r.ok) {
+                            const j = await r.json();
+                            const name = j && j.PropertyTable && j.PropertyTable.Properties && j.PropertyTable.Properties[0] && j.PropertyTable.Properties[0].IUPACName;
+                            if (name) return { success: true, name, source: 'pubchem_smiles' };
+                        }
+                        const sUrl = base + es + '/synonyms/JSON';
+                        const r2 = await fetch(sUrl);
+                        if (r2.ok) {
+                            const j2 = await r2.json();
+                            const syns = j2 && j2.InformationList && j2.InformationList.Information && j2.InformationList.Information[0] && j2.InformationList.Information[0].Synonym || [];
+                            if (syns && syns.length) return { success: true, name: syns[0], synonyms: syns, source: 'pubchem_smiles_synonyms' };
+                        }
+                    } catch (e) { }
+                    return { success: false };
+                }
+
+                let result = { success: false };
+                if (inchikey) result = await fetchPubChemByInchiKey(inchikey);
+                if (!result.success) {
+                    let can = smi;
+                    try { if (typeof mol.get_smiles === 'function') can = mol.get_smiles(); } catch (e) {}
+                    result = await fetchPubChemBySmiles(can);
+                }
+
+                if (result.success) {
+                    let txt = 'IUPAC 名称：' + (result.name || '') + '\n来源：' + (result.source || 'pubchem') + '\n';
+                    if (result.synonyms && result.synonyms.length) txt += '同义词示例：' + result.synonyms.slice(0,5).join(', ');
+                    display.innerText = txt;
+                } else {
+                    let fallback = '';
+                    if (inchikey) fallback = inchikey; else { try { fallback = mol.get_smiles(); } catch (e) { fallback = smi; } }
+                    display.innerText = '未查询到 IUPAC 名称，回退标识：' + fallback;
+                }
+
+                try { mol.delete(); } catch (e) {}
+            } catch (e) {
+                display.innerText = '查询异常: ' + e;
+            }
+        }
+
+        function draw(mol) {
+            var details = {};
+            draw_with_highlights(mol, details);
+        }
+
+        async function callback(text, update_descrs) {
+            if (!RDKitModule) return console.warn('RDKit not ready');
+            try {
+                var mol = RDKitModule.get_mol(text);
+                if (!!mol) {
+                    draw(mol);
+                    var ob = document.getElementById("can_smiles");
+                    if (ob) ob.outerHTML = "<div id='can_smiles'>" + mol.get_smiles() + "</div>";
+                    if (update_descrs) {
+                        try {
+                            var descrs = JSON.parse(mol.get_descriptors());
+                            var db = document.getElementById("descrs");
+                            if (db) db.outerHTML = "<div id='descrs'><b>AMW:</b> " + descrs.amw + "<br /><b>MolLogP:</b> " + descrs.CrippenClogP + "<br /><b>MFP2:</b> " + mol.get_morgan_fp(2, 128) + "</div>";
+                        } catch (e) {
+                            console.warn('descrs not available', e);
+                        }
+                    }
+                    // store canonical and request 3D
+                    try { currentCanonical = mol.get_smiles(); } catch(e) { currentCanonical = text; }
+                    try { mol.delete(); } catch (e) {}
+
+                    // call backend for 3D
+                    try {
+                        const resp = await fetch('/api/3d', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ smiles: currentCanonical }) });
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            last3DData = data;
+                            renderMolecule(data);
+                        } else {
+                            console.warn('3D backend returned error');
+                        }
+                    } catch (e) { console.warn('failed to call /api/3d', e); }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function sma_callback(text) {
+            if (!RDKitModule) return;
+            try {
+                var qmol = RDKitModule.get_qmol(text);
+                var mol = RDKitModule.get_mol(document.getElementById("smiles_input").value);
+                if (!!mol && !!qmol) {
+                    var mdetails = mol.get_substruct_match(qmol);
+                    var match = JSON.parse(mdetails);
+                    if (match.atoms && match.atoms.length) draw_with_highlights(mol, match);
+                    mol.delete();
+                    qmol.delete();
+                }
+            } catch (e) {
+                console.warn('sma_callback failed', e);
+            }
+        }
+
+        function template_callback(text) {
+            if (text == "") {
+                text = document.getElementById("template_input").value;
+            }
+            if (!RDKitModule) return;
+            try {
+                var qmol = RDKitModule.get_mol(text);
+                var mol = RDKitModule.get_mol(document.getElementById("smiles_input").value);
+                if (!!mol && !!qmol) {
+                    var mdetails = mol.get_substruct_match(qmol);
+                    var match = JSON.parse(mdetails);
+                    var useCoordgen = !!document.getElementById("useCoordgen") && document.getElementById("useCoordgen").checked;
+                    if (typeof mol.generate_aligned_coords === 'function') mol.generate_aligned_coords(qmol, useCoordgen);
+                    if (match.atoms && match.atoms.length) draw_with_highlights(mol, match);
+                    mol.delete();
+                    qmol.delete();
+                }
+            } catch (e) { console.warn('template_callback failed', e); }
+        }
+
+        function option_changed(cb) {
+            // 任何选项变化立即生效——仅更新 2D 显示，不调用后端
+            if (!RDKitModule) return;
+            var smi = document.getElementById('smiles_input').value;
+            try {
+                var mol = RDKitModule.get_mol(smi);
+                if (!mol) return;
+                var details = {};
+                draw_with_highlights(mol, details);
+                mol.delete && mol.delete();
+            } catch (e) { console.warn('option_changed failed', e); }
+        }
+
+        function abbreviation_option_changed(cb) {
+            if (!RDKitModule) return;
+            var smi = document.getElementById('smiles_input').value;
+            try {
+                var mol = RDKitModule.get_mol(smi);
+                if (document.getElementById('useAbbreviations') && document.getElementById('useAbbreviations').checked) {
+                    var useLinkers = !!(document.getElementById('useLinkers') && document.getElementById('useLinkers').checked);
+                    var maxCoverage = +(document.getElementById('maxCoverage').value || 0.4);
+                    if (typeof mol.condense_abbreviations === 'function') mol.condense_abbreviations(maxCoverage, useLinkers);
+                }
+                draw(mol);
+            } catch (e) { console.warn('abbreviation_option_changed failed', e); }
+        }
+
+        // 主入口：加载分子（前端生成 2D + 调后端生成 3D）
+        async function loadMolecule() {
+            const inputEl = document.getElementById('smiles_input');
+            const s = inputEl ? inputEl.value.trim() : '';
+            if (!s) return alert('请输入 SMILES 或化学名称');
+
+            const status = document.getElementById('standard_name');
+            if (status) status.innerText = '解析中...';
+
+            // 先尝试用 RDKit 解释为 SMILES
+            try {
+                if (RDKitModule) {
+                    try {
+                        const testMol = RDKitModule.get_mol(s);
+                        if (testMol) {
+                            // 可以被识别为分子
+                            try { const can = testMol.get_smiles(); if (inputEl) inputEl.value = can; } catch (e) {}
+                            try { testMol.delete(); } catch (e) {}
+                            if (status) status.innerText = '使用本地解析的 SMILES';
+                            callback(s, true);
+                            return;
+                        }
+                    } catch (e) { /* RDKit 抛错，继续到 PubChem */ }
+                }
+            } catch (e) { /* ignore */ }
+
+                // 如果 RDKit 无法解析，认为是名称或化学式，去 PubChem 查找 SMILES
+            try {
+                const name = encodeURIComponent(s);
+                const url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + name + '/property/IsomericSMILES,SMILES,ConnectivitySMILES/JSON';
+                const r = await fetch(url);
+                if (!r.ok) {
+                    // 试试 synonyms /CID -> property
+                    // 尝试直接通过 name->cids再取property
+                    const cidsUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + name + '/cids/JSON';
+                    const rc = await fetch(cidsUrl);
+                    if (rc.ok) {
+                        const jc = await rc.json();
+                        const cids = jc?.IdentifierList?.CID || [];
+                        if (cids.length) {
+                            const handled = await handleCidsList(cids, 'name->cids');
+                            if (handled) return;
+                        }
+                    }
+                    // 如果名称查询失败，也可能输入的是化学式（例如 C6H12），尝试按 formula / fastformula 查询
+                    try {
+                        const formula = encodeURIComponent(s);
+                        // 首先尝试 fastformula（更快的结构搜索）
+                        const fFastUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/' + formula + '/cids/JSON?MaxRecords=20';
+                        const frFast = await fetch(fFastUrl);
+                        if (frFast.ok) {
+                            const fj = await frFast.json();
+                            const cids = fj?.IdentifierList?.CID || [];
+                            const handled = await handleCidsList(cids, 'fastformula');
+                            if (handled) return;
+                        }
+                        // 如果 fastformula 未命中，再尝试标准 formula 接口
+                        const fUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/' + formula + '/cids/JSON';
+                        const fr = await fetch(fUrl);
+                        if (fr.ok) {
+                            const fj = await fr.json();
+                            const cids = fj?.IdentifierList?.CID || [];
+                            const handled = await handleCidsList(cids, 'formula');
+                            if (handled) return;
+                        }
+                    } catch (fe) { /* ignore formula lookup errors */ }
+
+                    throw new Error('PubChem 未返回 SMILES (name search failed, and formula fallbacks failed)');
+                }
+                const j = await r.json();
+                const smi = extractSmilesFromProperty(j);
+                if (smi) {
+                    if (inputEl) inputEl.value = smi;
+                    if (status) status.innerText = '从 PubChem 获取到 SMILES';
+                    callback(smi, true);
+                    return;
+                }
+                throw new Error('PubChem 未返回 SMILES');
+            } catch (e) {
+                // 如果按名称/直接查找失败，尝试按化学式（formula）查询 PubChem
+                try {
+                    const formula = encodeURIComponent(s);
+                    const fUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/' + formula + '/cids/JSON';
+                    const fr = await fetch(fUrl);
+                    if (fr.ok) {
+                        const fj = await fr.json();
+                        const cids = fj?.IdentifierList?.CID || [];
+                        const handled = await handleCidsList(cids, 'formula');
+                        if (handled) return;
+                    }
+                } catch (ee) { /* ignore formula lookup errors */ }
+
+                if (status) status.innerText = '未能解析为 SMILES：' + e;
+                alert('未能将输入解析为 SMILES 或在 PubChem 找到匹配。错误：' + e);
+            }
+        }
+
+        // 小 UI: 更新提示与弹窗
+        function showUpdateTip() { const tip = document.getElementById('update-tip'); tip.style.display = 'block'; setTimeout(()=>tip.style.display='none',3500); }
+        const UPDATE_VERSION = '2025-5-21S#1.2.3-1.4.3+';
+        const UPDATE_LOG = `\n- 支持多重键（双键、三键等）3D显示\n- 同分异构体支持\n- NewTech1.0风格弹窗支持\n`;
+        function showUpdateModal(){ document.getElementById('update-modal-title').innerText='你获得了一份新的更新！'; document.getElementById('update-modal-version').innerText='版本号：'+UPDATE_VERSION; document.getElementById('update-modal-log').innerText=UPDATE_LOG; document.getElementById('update-modal').style.display='block'; }
+        function closeUpdateModal(){ document.getElementById('update-modal').style.display='none'; }
+        if (localStorage.getItem('chem2line_version') !== UPDATE_VERSION) { showUpdateModal(); localStorage.setItem('chem2line_version', UPDATE_VERSION); }
+
+        // 摇杆与缩放支持：使用旧模板的完整 joystick 实现（触摸 + 鼠标 + 防滚动）
+        // Variables for joystick and zoom
+        const joystickContainer = document.getElementById("joystick-container");
+        const joystick = document.getElementById("joystick");
+        const cameraJoystickContainer = document.getElementById("camera-joystick-container");
+        const cameraJoystick = document.getElementById("camera-joystick");
+        const zoomSlider = document.getElementById("zoom-slider");
+
+        // Joystick setup function (from olds template)
+        function setupJoystick(container, joystickEl, callback) {
+            let active = false;
+            let start = { x: 0, y: 0 };
+            let touchId = null;
+
+            // Mouse events
+            container.addEventListener("mousedown", (event) => {
+                event.preventDefault(); // 阻止页面滚动
+                active = true;
+                start = { x: event.clientX, y: event.clientY };
+            });
+
+            container.addEventListener("mousemove", (event) => {
+                if (!active) return;
+                event.preventDefault(); // 阻止页面滚动
+                handleMove(event.clientX, event.clientY);
+            });
+
+            container.addEventListener("mouseup", (event) => {
+                event.preventDefault(); // 阻止页面滚动
+                active = false;
+                resetJoystick();
+            });
+
+            container.addEventListener("mouseleave", (event) => {
+                if (active) {
+                    event.preventDefault(); // 阻止页面滚动
+                    active = false;
+                    resetJoystick();
+                }
+            });
+
+            // Touch events
+            container.addEventListener("touchstart", (event) => {
+                if (event.touches.length > 1) return; // Ignore multi-touch
+                event.preventDefault(); // 阻止页面滚动
+                active = true;
+                touchId = event.touches[0].identifier;
+                start = {
+                    x: event.touches[0].clientX,
+                    y: event.touches[0].clientY
+                };
+            });
+
+            container.addEventListener("touchmove", (event) => {
+                if (!active) return;
+                event.preventDefault(); // 阻止页面滚动
+
+                // Find the correct touch point
+                const touch = Array.from(event.touches).find(t => t.identifier === touchId);
+                if (!touch) return;
+
+                handleMove(touch.clientX, touch.clientY);
+            });
+
+            container.addEventListener("touchend", (event) => {
+                const touch = Array.from(event.changedTouches).find(t => t.identifier === touchId);
+                if (!touch) return;
+
+                event.preventDefault(); // 阻止页面滚动
+                active = false;
+                resetJoystick();
+            });
+
+            function handleMove(clientX, clientY) {
+                const deltaX = clientX - start.x;
+                const deltaY = clientY - start.y;
+
+                const maxDistance = 30;
+                const distance = Math.min(maxDistance, Math.sqrt(deltaX ** 2 + deltaY ** 2));
+                const angle = Math.atan2(deltaY, deltaX);
+
+                joystickEl.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px`;
+
+                // Call the callback with normalized values (-1 to 1)
+                const normalizedX = deltaX / maxDistance;
+                const normalizedY = deltaY / maxDistance;
+                callback(normalizedX, normalizedY);
+            }
+
+            function resetJoystick() {
+                joystickEl.style.transform = "translate(0, 0)";
+                callback(0, 0);
+            }
+        }
+
+        // Initialize joysticks using olds implementation
+        setupJoystick(joystickContainer, joystick, (x, y) => {
+            moleculeGroup.rotation.y += x * 0.05;
+            moleculeGroup.rotation.x += y * 0.05;
+        });
+
+        setupJoystick(cameraJoystickContainer, cameraJoystick, (x, y) => {
+            camera.position.x += x * 0.5;
+            camera.position.y -= y * 0.5;
+        });
+
+        // Zoom slider logic
+        zoomSlider.addEventListener("input", (event) => {
+            camera.position.z = event.target.value;
+        });
+
+        // Add touch support for zoom slider
+        zoomSlider.addEventListener("touchmove", (event) => {
+            camera.position.z = event.target.value;
+        });
+
+        // 启动时设置输入初始值并应用持久化的画布尺寸
+        window.addEventListener('load', ()=>{ 
+            const inp = document.getElementById('canvasSizeInput');
+            if (inp) inp.value = canvasSize;
+            try { renderer.setSize(canvasSize, canvasSize); } catch(e){}
+            if (RDKitModule){};
+        });
+    </script>
+</body>
+</html>

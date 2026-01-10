@@ -1,1 +1,1 @@
-<config><language>zh_cn</language><default_database>lib/db/default_database.xml</default_database><record_history>false</record_history><available_languages><language>zh_cn</language><language>en_us</language></available_languages></config>
+<config><language>zh_cn</language><default_database>lib/db/default_database.xml</default_database><record_history>true</record_history><default_3d_model>ball_and_stick</default_3d_model><available_languages><language>zh_cn</language><language>en_us</language></available_languages></config>
