@@ -6,96 +6,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chem2Line WebEz Edition</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; background-color: white; }
-        #header { width: 100%; text-align: center; padding: 10px; background-color: #f0f0f0; font-size: 20px; font-weight: bold; border-bottom: 1px solid black; }
+        * { box-sizing: border-box; }
+        body { margin: 0; display: flex; flex-direction: column; background-color: white; min-height: 100vh; }
+        #header { width: 100%; text-align: center; padding: 10px; background-color: #f0f0f0; font-size: 20px; font-weight: bold; border-bottom: 1px solid #ddd; }
         #main { display: flex; flex-direction: row; flex-grow: 1; }
-        #left-panel { width: 50%; display: flex; flex-direction: column; align-items: center; border-right: 1px solid black; }
-        #right-panel { width: 50%; display: flex; flex-direction: column; align-items: center; }
+        #left-panel { width: 50%; display: flex; flex-direction: column; align-items: center; border-right: 1px solid #ddd; overflow-y: auto; }
+        #right-panel { width: 50%; display: flex; flex-direction: column; align-items: center; padding: 10px; }
         #controls { margin: 10px; }
-        #smiles-canvas { width: 100%; height: auto; border: 1px solid black; background-color: white; }
-        canvas { border: 1px solid black; background-color: white; }
-        #joystick-row { display: flex; align-items: center; margin-top: 10px; }
+        #smiles-canvas { width: 100%; height: auto; border: 1px solid #ddd; background-color: white; }
+        canvas { border: 1px solid #ddd; background-color: white; max-width: 100%; touch-action: none; }
+        #joystick-row { display: flex; align-items: center; margin-top: 10px; flex-wrap: wrap; justify-content: center; gap: 10px; }
         #joystick-container, #camera-joystick-container {
-            width: 100px; height: 100px; background: rgba(0, 0, 0, 0.1); border-radius: 50%; 
-            position: relative;
+            width: 100px; height: 100px; background: rgba(0, 0, 0, 0.1); border-radius: 50%;
+            position: relative; touch-action: none;
         }
         #joystick, #camera-joystick {
             position: absolute; width: 40px; height: 40px; background: rgba(0, 0, 0, 0.5); border-radius: 50%; top: 30px; left: 30px;
         }
-        #zoom-slider { margin: 0 20px; width: 150px; }
-        #update-tip {
-            display:none;
-            position:fixed;
-            top:30px;
-            left:50%;
-            transform:translateX(-50%);
-            background:#007bff;
-            color:#fff;
-            padding:16px 32px;
-            border-radius:8px;
-            box-shadow:0 2px 12px rgba(0,0,0,0.15);
-            font-size:20px;
-            z-index:99999;
-        }
-        #update-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.25);
-            z-index: 99999;
-        }
-        #update-modal .modal-content {
-            background: #fff;
-            border-radius: 12px;
-            max-width: 400px;
-            min-width: 320px;
-            margin: 80px auto 0 auto;
-            box-shadow: 0 4px 32px rgba(0,0,0,0.18);
-            padding: 0 0 24px 0;
+        #zoom-slider { margin: 0 10px; width: 150px; }
+        #health-indicators {
+            margin-top: 8px;
+            width: 100%;
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 12px;
+            color: #666;
         }
-        #update-modal .modal-title {
-            font-size: 22px;
-            font-weight: bold;
-            margin: 24px 0 8px 0;
-            color: #007bff;
+        .health-item { display: inline-flex; align-items: center; gap: 4px; }
+        .health-light { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .light-red { background: #d93025; }
+        .light-yellow { background: #f9ab00; }
+        .light-green { background: #188038; }
+
+        /* 输入区域优化 */
+        #smiles_input { font-size: 16px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; background: #f8f8f8; cursor: pointer; font-size: 14px; }
+        button:active { background: #e0e0e0; }
+
+        /* ─── 移动端响应式 ─── */
+        @media screen and (max-width: 768px) {
+            #header { font-size: 16px; padding: 8px; }
+            #main { flex-direction: column; }
+            #left-panel { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
+            #right-panel { width: 100%; padding: 10px; }
+
+            #left-panel > div { padding: 10px !important; }
+
+            /* 输入框全宽 */
+            #smiles_input { width: 100% !important; font-size: 16px; }
+
+            /* 按钮换行 */
+            #left-panel button { margin-top: 6px; }
+
+            /* 画布自适应 */
+            canvas#viewer { width: 100% !important; height: auto !important; aspect-ratio: 1; }
+
+            /* 摇杆行 */
+            #joystick-row { flex-wrap: wrap; gap: 12px; padding: 0 10px; }
+            #joystick-container, #camera-joystick-container { width: 80px; height: 80px; }
+            #joystick, #camera-joystick { width: 32px; height: 32px; top: 24px; left: 24px; }
+            #zoom-slider { width: 100%; max-width: 200px; }
+
+            /* SVG 图片自适应 */
+            #drawing svg { width: 100% !important; height: auto !important; max-width: 100%; }
+
+            /* 同分异构体列表 */
+            #isomers > div { justify-content: center !important; }
+            #isomers > div > div { width: 45% !important; min-width: 140px; }
+
+            /* 选项区域紧凑 */
+            #left-panel label { font-size: 13px; }
+            #left-panel input[type="text"],
+            #left-panel input[type="number"] { font-size: 14px; padding: 4px 6px; }
+
+            /* 底部信息 */
+            #desktop-version-info { font-size: 12px; }
         }
-        #update-modal .modal-version {
-            font-size: 15px;
-            color: #888;
-            margin-bottom: 8px;
-        }
-        #update-modal .modal-log {
-            width: 90%;
-            max-height: 180px;
-            min-height: 60px;
-            background: #f7f7f7;
-            border-radius: 6px;
-            border: 1px solid #e0e0e0;
-            font-size: 15px;
-            color: #333;
-            margin-bottom: 18px;
-            padding: 10px 12px;
-            overflow-y: auto;
-            white-space: pre-line;
-        }
-        #update-modal .modal-close {
-            background: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            padding: 7px 32px;
-            cursor: pointer;
-            margin-bottom: 0;
+
+        /* 超小屏幕（<480px） */
+        @media screen and (max-width: 480px) {
+            #header { font-size: 14px; }
+            #joystick-container, #camera-joystick-container { width: 70px; height: 70px; }
+            #joystick, #camera-joystick { width: 28px; height: 28px; top: 21px; left: 21px; }
+            button { font-size: 13px; padding: 5px 10px; }
         }
     </style>
 </head>
 <body>
     <div id="header">Chem2Line WebEz Edition</div>
-    <div id="update-tip">You Got A New Version!</div>
     <div id="main">
         <div id="left-panel">
                         <div style="width:100%; padding:8px; box-sizing:border-box;">
@@ -105,7 +104,9 @@
                                 <div id="can_smiles" style="margin-top:6px; color:#333;"></div>
                             </div>
                             <div style="margin-top:8px;">
-                                输入：<input id="smiles_input" type="text" value="CCO" style="width:60%;"> <button onclick="loadMolecule()">加载</button>
+                                输入：<input id="smiles_input" type="text" value="CCO" style="width:60%; min-width:120px;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"> <button onclick="loadMolecule()">加载</button>
+                                <button onclick="resetFrontendState()" style="margin-left:8px;">重置</button>
+                                <input type="checkbox" id="forceSMILES" style="margin-left:8px;"> <label for="forceSMILES" style="font-size:12px;">强制SMILES</label>
                             </div>
                             <div id="descrs" style="margin-top:8px;"></div>
                             <div id="canvas-div" style="margin-top:8px;">
@@ -134,7 +135,7 @@
                                 <input type="checkbox" id="explicitMethyl" onclick="option_changed(this);"> <label for="explicitMethyl">显示显式氢</label>
                             </div>
                             <div style="margin-top:8px;">
-                                <label for="legend">图例（legend）</label>
+                                <label for="legend">戳记</label>
                                 <input type="text" id="legend" onkeyup="option_changed(this);" style="margin-left:8px; width:40%;">
                             </div>
                             <div style="margin-top:8px;">
@@ -145,13 +146,23 @@
                             </div>
 
                             <div style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
-                                <strong>缩写（Abbreviations）</strong><br>
+                                <strong>缩写</strong><br>
                                 <input type="checkbox" id="useAbbreviations" onclick="abbreviation_option_changed(this);"> <label for="useAbbreviations">使用缩写</label>
-                                <input type="checkbox" id="useLinkers" onclick="abbreviation_option_changed(this);" style="margin-left:12px;"> <label for="useLinkers">使用连接片 (Linkers)</label>
+                                <input type="checkbox" id="useLinkers" onclick="abbreviation_option_changed(this);" style="margin-left:12px;"> <label for="useLinkers">使用连接片</label>
                                 <label for="maxCoverage" style="margin-left:12px;">最大覆盖率</label>
                                 <input type="text" id="maxCoverage" value="0.4" onclick="abbreviation_option_changed(this);" style="margin-left:6px; width:60px;">
                             </div>
                         </div>
+            <div id="health-indicators">
+                <div class="health-item" id="rdkit-health-item" title="RDKit 初始化状态">
+                    <span class="health-light light-red" id="rdkit-light"></span>
+                    <span id="rdkit-health-text">RDKit 未就绪</span>
+                </div>
+                <div class="health-item" id="webgl-health-item" title="WebGL 初始化状态">
+                    <span class="health-light light-red" id="webgl-light"></span>
+                    <span id="webgl-health-text">WebGL 未就绪</span>
+                </div>
+            </div>
             <div id="desktop-version-info" style="margin-top: 20px; text-align: center; font-size: 14px; color: gray;">
                 <p>获取 <a href="https://github.com/Ziyang-Bai/Chem2Line" target="_blank" style="color: blue; text-decoration: none;">Chem2Line桌面版</a> 使用更完整的功能！</p>
                 <p>开发者 <a href="https://Ziyang-Bai.com" target="_blank" style="color: blue; text-decoration: none;">Ziyang-Bai</a></p>
@@ -171,29 +182,53 @@
             </div>
         </div>
     </div>
-    <div id="update-modal">
-        <div class="modal-content">
-            <div class="modal-title" id="update-modal-title">🎉 You Got A New Version!</div>
-            <div class="modal-version" id="update-modal-version"></div>
-            <div class="modal-log" id="update-modal-log"></div>
-            <button class="modal-close" onclick="closeUpdateModal()">关闭</button>
-        </div>
-    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
     <script>
+        function setHealthStatus(target, state, text) {
+            const light = document.getElementById(target + '-light');
+            const label = document.getElementById(target + '-health-text');
+            if (light) {
+                light.classList.remove('light-red', 'light-yellow', 'light-green');
+                if (state === 'green') light.classList.add('light-green');
+                else if (state === 'yellow') light.classList.add('light-yellow');
+                else light.classList.add('light-red');
+            }
+            if (label && text) label.innerText = text;
+        }
+
         // Three.js 初始化
         const smilesImageDiv = document.getElementById("smiles-image");
         const canvas = document.getElementById("viewer");
 
-        // 画布尺寸（单一数值，正方形），从 localStorage 读取或使用默认 600
-        let canvasSize = parseInt(localStorage.getItem('chem2line_canvas_size')) || 400;
+        const DEFAULT_SMILES = '';
+        const DEFAULT_CANVAS_SIZE = 400;
+        // 画布尺寸（单一数值，正方形），从 localStorage 读取或使用默认值
+        // 移动端自动适配容器宽度
+        function getResponsiveCanvasSize() {
+            const stored = parseInt(localStorage.getItem('chem2line_canvas_size'));
+            if (stored && stored >= 100) return stored;
+            // 移动端：使用右侧面板宽度（或视口宽度）
+            const rightPanel = document.getElementById('right-panel');
+            if (rightPanel && rightPanel.clientWidth > 0 && rightPanel.clientWidth < 500) {
+                return Math.min(rightPanel.clientWidth - 20, 400);
+            }
+            return DEFAULT_CANVAS_SIZE;
+        }
+        let canvasSize = getResponsiveCanvasSize();
         // 将尺寸应用到 canvas
         canvas.style.width = canvas.style.height = canvasSize + 'px';
         canvas.width = canvasSize;
         canvas.height = canvasSize;
 
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        let renderer = null;
+        try {
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+            setHealthStatus('webgl', 'green', 'WebGL 正常');
+        } catch (e) {
+            setHealthStatus('webgl', 'yellow', 'WebGL 异常');
+            console.warn('WebGL 初始化失败', e);
+        }
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
         const light = new THREE.PointLight(0xffffff, 1.5);
@@ -214,13 +249,17 @@
         let RDKitModule = null;
         initRDKitModule().then(function (m) {
             RDKitModule = m;
+            setHealthStatus('rdkit', 'green', 'RDKit 正常');
             console.log('RDKit ready', RDKitModule.version());
-        }).catch(err => console.error(err));
+        }).catch(err => {
+            setHealthStatus('rdkit', 'yellow', 'RDKit 异常');
+            console.error(err);
+        });
 
         // 渲染循环（不重复设置大小，大小由 applyCanvasSize 管理）
         function animate() {
             requestAnimationFrame(animate);
-            renderer.render(scene, camera);
+            if (renderer) renderer.render(scene, camera);
         }
         animate();
 
@@ -236,9 +275,56 @@
             // apply to canvas and renderer
             canvas.style.width = canvas.style.height = canvasSize + 'px';
             canvas.width = canvasSize; canvas.height = canvasSize;
-            renderer.setSize(canvasSize, canvasSize);
+            if (renderer) renderer.setSize(canvasSize, canvasSize);
             // if SVG exists, reapply size wrapper
             if (window.__last_svg) setSVG(window.__last_svg);
+        }
+
+        function syncForceSmilesCheckbox() {
+            const checkbox = document.getElementById('forceSMILES');
+            if (checkbox) checkbox.checked = runtimeOptions.forceSMILES;
+        }
+
+        async function resetFrontendState() {
+            const smilesInput = document.getElementById('smiles_input');
+            const canvasInput = document.getElementById('canvasSizeInput');
+            const drawing = document.getElementById('drawing');
+            const canSmiles = document.getElementById('can_smiles');
+            const descrs = document.getElementById('descrs');
+            const standardName = document.getElementById('standard_name');
+            const isomers = document.getElementById('isomers');
+
+            runtimeOptions.forceProxy = false;
+            runtimeOptions.debugMode = false;
+            runtimeOptions.forceSMILES = false;
+
+            localStorage.removeItem('chem2line_force_proxy');
+            localStorage.removeItem('chem2line_debug_mode');
+            localStorage.removeItem('chem2line_force_smiles');
+            localStorage.removeItem('chem2line_canvas_size');
+
+            if (smilesInput) smilesInput.value = DEFAULT_SMILES;
+            if (canvasInput) canvasInput.value = String(DEFAULT_CANVAS_SIZE);
+            canvasSize = DEFAULT_CANVAS_SIZE;
+            syncForceSmilesCheckbox();
+
+            if (drawing) drawing.innerHTML = '';
+            if (canSmiles) canSmiles.innerHTML = '';
+            if (descrs) descrs.innerHTML = '';
+            if (standardName) standardName.innerHTML = '';
+            if (isomers) isomers.innerHTML = '';
+            window.__last_svg = '';
+            currentCanonical = null;
+            last3DData = null;
+            moleculeGroup.clear();
+
+            if (logPanelVisible) toggleLogPanel(false);
+            try {
+                await syncBackendDebugMode();
+            } catch (e) {}
+
+            applyCanvasSize();
+            return getRuntimeStatus();
         }
 
         // 渲染分子（复用之前渲染逻辑）
@@ -325,23 +411,229 @@
             } catch (e) { return null; }
         }
 
+        const PUBCHEM_PUG_BASE = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/';
+        const runtimeOptions = {
+            forceProxy: localStorage.getItem('chem2line_force_proxy') === '1',
+            debugMode: localStorage.getItem('chem2line_debug_mode') === '1',
+            forceSMILES: localStorage.getItem('chem2line_force_smiles') === '1'
+        };
+
+        function debugLog(...args) {
+            if (!runtimeOptions.debugMode) return;
+            console.debug('[Chem2Line Debug]', ...args);
+        }
+
+        async function syncBackendDebugMode() {
+            try {
+                const r = await fetch('/api/debug-mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: runtimeOptions.debugMode })
+                });
+                if (!r.ok) console.warn('同步后端调试模式失败，HTTP', r.status);
+            } catch (e) {
+                console.warn('同步后端调试模式失败:', e);
+            }
+        }
+
+        function getRuntimeStatus() {
+            return {
+                forceProxy: runtimeOptions.forceProxy,
+                debugMode: runtimeOptions.debugMode,
+                forceSMILES: runtimeOptions.forceSMILES
+            };
+        }
+
+        // 浏览器控制台命令：
+        // chem2line('proxy on') / chem2line('proxy off')
+        // chem2line('debug on') / chem2line('debug off')
+        // chem2line('status') / chem2line('help')
+        window.chem2line = async function(command) {
+            const cmd = String(command || '').trim().toLowerCase();
+            if (cmd === 'proxy on') {
+                runtimeOptions.forceProxy = true;
+                localStorage.setItem('chem2line_force_proxy', '1');
+                console.info('已开启强制代理模式');
+                return getRuntimeStatus();
+            }
+            if (cmd === 'proxy off') {
+                runtimeOptions.forceProxy = false;
+                localStorage.setItem('chem2line_force_proxy', '0');
+                console.info('已关闭强制代理模式');
+                return getRuntimeStatus();
+            }
+            if (cmd === 'debug on') {
+                runtimeOptions.debugMode = true;
+                localStorage.setItem('chem2line_debug_mode', '1');
+                await syncBackendDebugMode();
+                console.info('已开启调试模式');
+                return getRuntimeStatus();
+            }
+            if (cmd === 'debug off') {
+                runtimeOptions.debugMode = false;
+                localStorage.setItem('chem2line_debug_mode', '0');
+                await syncBackendDebugMode();
+                console.info('已关闭调试模式');
+                return getRuntimeStatus();
+            }
+            if (cmd === 'force-smiles on') {
+                runtimeOptions.forceSMILES = true;
+                localStorage.setItem('chem2line_force_smiles', '1');
+                syncForceSmilesCheckbox();
+                console.info('已开启强制SMILES模式');
+                return getRuntimeStatus();
+            }
+            if (cmd === 'force-smiles off') {
+                runtimeOptions.forceSMILES = false;
+                localStorage.setItem('chem2line_force_smiles', '0');
+                syncForceSmilesCheckbox();
+                console.info('已关闭强制SMILES模式');
+                return getRuntimeStatus();
+            }
+            if (cmd === 'status') {
+                const s = getRuntimeStatus();
+                console.info('当前状态:', s);
+                return s;
+            }
+            console.info("可用命令: chem2line('proxy on|off'), chem2line('debug on|off'), chem2line('force-smiles on|off'), chem2line('status')");
+            return getRuntimeStatus();
+        };
+
+        // 简短别名
+        window.c2l = window.chem2line;
+
+        let logPanelElement = null;
+        let logPanelVisible = false;
+
+        function createLogPanel() {
+            if (logPanelElement) return;
+            logPanelElement = document.createElement('div');
+            logPanelElement.id = 'log-panel';
+            logPanelElement.style.cssText = 'position:fixed;bottom:0;left:0;right:0;height:150px;background:#1a1a1a;color:#ff0000;padding:8px;box-sizing:border-box;overflow-y:auto;font-family:monospace;font-size:12px;white-space:pre-wrap;word-wrap:break-word;z-index:10000;display:none;';
+            document.body.appendChild(logPanelElement);
+        }
+
+        function toggleLogPanel(show) {
+            createLogPanel();
+            logPanelVisible = show !== undefined ? show : !logPanelVisible;
+            logPanelElement.style.display = logPanelVisible ? 'block' : 'none';
+            if (logPanelVisible) refreshLogs();
+            return logPanelVisible;
+        }
+
+        // 扩展控制台命令支持日志面板
+        const originalChem2Line = window.chem2line;
+        window.chem2line = async function(command) {
+            const cmd = String(command || '').trim().toLowerCase();
+            if (cmd === 'logs on') {
+                console.info('已开启日志面板');
+                return { visible: toggleLogPanel(true) };
+            }
+            if (cmd === 'logs off') {
+                console.info('已关闭日志面板');
+                return { visible: toggleLogPanel(false) };
+            }
+            return await originalChem2Line(command);
+        };
+        window.c2l = window.chem2line;
+
+        async function refreshLogs() {
+            if (!logPanelElement) return;
+            try {
+                const r = await fetch('/api/get-logs');
+                if (!r.ok) return;
+                const payload = await r.json();
+                const logs = payload.logs || [];
+                logPanelElement.innerText = logs.join('\n');
+                logPanelElement.scrollTop = logPanelElement.scrollHeight;
+            } catch (e) {
+                // 忽略日志获取失败
+            }
+        }
+
+        setInterval(() => {
+            if (logPanelVisible) refreshLogs();
+        }, 2000);
+
+        async function pubchemFetchJSON(path, query = {}, timeout = 12) {
+            const cleanPath = String(path || '').replace(/^\/+/, '');
+            const qs = new URLSearchParams(query || {}).toString();
+            const directUrl = PUBCHEM_PUG_BASE + cleanPath + (qs ? ('?' + qs) : '');
+            let directError = null;
+
+            if (!runtimeOptions.forceProxy) {
+                try {
+                    const directResp = await fetch(directUrl);
+                    if (directResp.ok) {
+                        const data = await directResp.json();
+                        debugLog('PubChem 直连成功', { path: cleanPath, status: directResp.status });
+                        return { ok: true, status: directResp.status, data, via: 'direct' };
+                    }
+                    directError = 'HTTP ' + directResp.status;
+                    debugLog('PubChem 直连失败', { path: cleanPath, error: directError });
+                } catch (e) {
+                    directError = e && e.message ? e.message : String(e);
+                    debugLog('PubChem 直连异常', { path: cleanPath, error: directError });
+                }
+            } else {
+                directError = 'skipped(forceProxy=true)';
+                debugLog('强制代理已开启，跳过直连', { path: cleanPath });
+            }
+
+            try {
+                const proxyResp = await fetch('/api/pubchem/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: cleanPath, query: query || {}, timeout: timeout })
+                });
+                let payload = null;
+                try { payload = await proxyResp.json(); } catch (e) { payload = null; }
+
+                if (proxyResp.ok && payload && payload.success && payload.data) {
+                    debugLog('PubChem 代理成功', { path: cleanPath, status: payload.status || proxyResp.status });
+                    return {
+                        ok: true,
+                        status: payload.status || proxyResp.status,
+                        data: payload.data,
+                        via: 'proxy',
+                        directError: directError
+                    };
+                }
+
+                const proxyErr = (payload && payload.error) ? payload.error : ('HTTP ' + proxyResp.status);
+                debugLog('PubChem 代理失败', { path: cleanPath, error: proxyErr });
+                return {
+                    ok: false,
+                    status: (payload && payload.status) ? payload.status : proxyResp.status,
+                    error: 'direct=' + (directError || 'none') + '; proxy=' + proxyErr,
+                    via: 'proxy'
+                };
+            } catch (e) {
+                const proxyErr = e && e.message ? e.message : String(e);
+                debugLog('PubChem 代理异常', { path: cleanPath, error: proxyErr });
+                return {
+                    ok: false,
+                    status: 0,
+                    error: 'direct=' + (directError || 'none') + '; proxy=' + proxyErr,
+                    via: 'proxy'
+                };
+            }
+        }
+
                 // 从化学式获取 CID（支持 Waiting / ListKey 轮询）
                 async function fetchCidsForFormula(formula, maxWaitSeconds = 20) {
                     try {
-                        const base = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/';
-                        const url = base + encodeURIComponent(formula) + '/cids/JSON';
-                        let r = await fetch(url);
-                        if (!r.ok) return null;
-                        let j = await r.json();
+                        const first = await pubchemFetchJSON('compound/formula/' + encodeURIComponent(formula) + '/cids/JSON');
+                        if (!first.ok) return null;
+                        let j = first.data;
                         if (j && j.Waiting && j.ListKey) {
                             const listKey = j.ListKey;
-                            const pollUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/listkey/' + encodeURIComponent(listKey) + '/cids/JSON';
                             const start = Date.now();
                             while ((Date.now() - start) / 1000 < maxWaitSeconds) {
                                 await new Promise(res => setTimeout(res, 1000));
-                                try { r = await fetch(pollUrl); } catch (e) { continue; }
-                                if (!r.ok) continue;
-                                j = await r.json();
+                                const poll = await pubchemFetchJSON('compound/listkey/' + encodeURIComponent(listKey) + '/cids/JSON');
+                                if (!poll.ok) continue;
+                                j = poll.data;
                                 if (j && j.IdentifierList && j.IdentifierList.CID) return j.IdentifierList.CID;
                                 if (j && j.Waiting) continue;
                             }
@@ -357,11 +649,10 @@
                     try {
                         for (let i = 0; i < cids.length; i += batchSize) {
                             const chunk = cids.slice(i, i + batchSize);
-                            const url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + chunk.join(',') + '/property/IsomericSMILES,SMILES,ConnectivitySMILES/JSON';
                             try {
-                                const r = await fetch(url);
+                                const r = await pubchemFetchJSON('compound/cid/' + chunk.join(',') + '/property/IsomericSMILES,SMILES,ConnectivitySMILES/JSON');
                                 if (!r.ok) continue;
-                                const j = await r.json();
+                                const j = r.data;
                                 const props = j?.PropertyTable?.Properties || [];
                                 for (const p of props) {
                                     const cid = p.CID;
@@ -610,19 +901,16 @@
                 try { if (typeof mol.get_inchi_key === 'function') inchikey = mol.get_inchi_key(); } catch (e) { inchikey = null; }
 
                 async function fetchPubChemByInchiKey(key) {
-                    const base = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/';
                     try {
-                        const p = base + encodeURIComponent(key) + '/property/IUPACName/JSON';
-                        const r = await fetch(p);
-                        if (r.ok) {
-                            const j = await r.json();
+                        const p = await pubchemFetchJSON('compound/inchikey/' + encodeURIComponent(key) + '/property/IUPACName/JSON');
+                        if (p.ok) {
+                            const j = p.data;
                             const name = j && j.PropertyTable && j.PropertyTable.Properties && j.PropertyTable.Properties[0] && j.PropertyTable.Properties[0].IUPACName;
                             if (name) return { success: true, name, source: 'pubchem_inchikey' };
                         }
-                        const sUrl = base + encodeURIComponent(key) + '/synonyms/JSON';
-                        const r2 = await fetch(sUrl);
-                        if (r2.ok) {
-                            const j2 = await r2.json();
+                        const s = await pubchemFetchJSON('compound/inchikey/' + encodeURIComponent(key) + '/synonyms/JSON');
+                        if (s.ok) {
+                            const j2 = s.data;
                             const syns = j2 && j2.InformationList && j2.InformationList.Information && j2.InformationList.Information[0] && j2.InformationList.Information[0].Synonym || [];
                             if (syns && syns.length) return { success: true, name: syns[0], synonyms: syns, source: 'pubchem_inchikey_synonyms' };
                         }
@@ -631,20 +919,17 @@
                 }
 
                 async function fetchPubChemBySmiles(smiles) {
-                    const base = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/';
                     try {
                         const es = encodeURIComponent(smiles);
-                        const p = base + es + '/property/IUPACName/JSON';
-                        const r = await fetch(p);
-                        if (r.ok) {
-                            const j = await r.json();
+                        const p = await pubchemFetchJSON('compound/smiles/' + es + '/property/IUPACName/JSON');
+                        if (p.ok) {
+                            const j = p.data;
                             const name = j && j.PropertyTable && j.PropertyTable.Properties && j.PropertyTable.Properties[0] && j.PropertyTable.Properties[0].IUPACName;
                             if (name) return { success: true, name, source: 'pubchem_smiles' };
                         }
-                        const sUrl = base + es + '/synonyms/JSON';
-                        const r2 = await fetch(sUrl);
-                        if (r2.ok) {
-                            const j2 = await r2.json();
+                        const s = await pubchemFetchJSON('compound/smiles/' + es + '/synonyms/JSON');
+                        if (s.ok) {
+                            const j2 = s.data;
                             const syns = j2 && j2.InformationList && j2.InformationList.Information && j2.InformationList.Information[0] && j2.InformationList.Information[0].Synonym || [];
                             if (syns && syns.length) return { success: true, name: syns[0], synonyms: syns, source: 'pubchem_smiles_synonyms' };
                         }
@@ -662,7 +947,7 @@
 
                 if (result.success) {
                     let txt = 'IUPAC 名称：' + (result.name || '') + '\n来源：' + (result.source || 'pubchem') + '\n';
-                    if (result.synonyms && result.synonyms.length) txt += '同义词示例：' + result.synonyms.slice(0,5).join(', ');
+                    if (result.synonyms && result.synonyms.length) txt += '详情：' + result.synonyms.slice(0,5).join(', ');
                     display.innerText = txt;
                 } else {
                     let fallback = '';
@@ -788,6 +1073,7 @@
             const inputEl = document.getElementById('smiles_input');
             const s = inputEl ? inputEl.value.trim() : '';
             if (!s) return alert('请输入 SMILES 或化学名称');
+            const debugSteps = [];
 
             const status = document.getElementById('standard_name');
             if (status) status.innerText = '解析中...';
@@ -805,54 +1091,75 @@
                             callback(s, true);
                             return;
                         }
-                    } catch (e) { /* RDKit 抛错，继续到 PubChem */ }
+                    } catch (e) {
+                        debugSteps.push('RDKit 解析失败：' + (e && e.message ? e.message : String(e)));
+                    }
                 }
             } catch (e) { /* ignore */ }
+
+            // 如果启用了强制SMILES，RDKit无法解析就直接抛错，不查PubChem
+            if (runtimeOptions.forceSMILES) {
+                if (status) status.innerText = '强制SMILES模式：无法解析输入';
+                alert('强制SMILES模式下，输入无法被解析为有效SMILES。\n\n输入内容：' + s + '\n\n请确保输入是标准SMILES格式。');
+                return;
+            }
 
                 // 如果 RDKit 无法解析，认为是名称或化学式，去 PubChem 查找 SMILES
             try {
                 const name = encodeURIComponent(s);
-                const url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + name + '/property/IsomericSMILES,SMILES,ConnectivitySMILES/JSON';
-                const r = await fetch(url);
+                const r = await pubchemFetchJSON('compound/name/' + name + '/property/IsomericSMILES,SMILES,ConnectivitySMILES/JSON');
                 if (!r.ok) {
+                    debugSteps.push('PubChem 名称属性查询失败：' + (r.error || ('HTTP ' + r.status)));
                     // 试试 synonyms /CID -> property
                     // 尝试直接通过 name->cids再取property
-                    const cidsUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + name + '/cids/JSON';
-                    const rc = await fetch(cidsUrl);
+                    const rc = await pubchemFetchJSON('compound/name/' + name + '/cids/JSON');
                     if (rc.ok) {
-                        const jc = await rc.json();
+                        const jc = rc.data;
                         const cids = jc?.IdentifierList?.CID || [];
                         if (cids.length) {
                             const handled = await handleCidsList(cids, 'name->cids');
                             if (handled) return;
+                            debugSteps.push('name->cids 查询到 CID 但未获得可用 SMILES');
+                        } else {
+                            debugSteps.push('name->cids 未返回 CID');
                         }
+                    } else {
+                        debugSteps.push('PubChem 名称 CID 查询失败：' + (rc.error || ('HTTP ' + rc.status)));
                     }
                     // 如果名称查询失败，也可能输入的是化学式（例如 C6H12），尝试按 formula / fastformula 查询
                     try {
                         const formula = encodeURIComponent(s);
                         // 首先尝试 fastformula（更快的结构搜索）
-                        const fFastUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/' + formula + '/cids/JSON?MaxRecords=20';
-                        const frFast = await fetch(fFastUrl);
+                        const frFast = await pubchemFetchJSON('compound/fastformula/' + formula + '/cids/JSON', { MaxRecords: 20 });
                         if (frFast.ok) {
-                            const fj = await frFast.json();
+                            const fj = frFast.data;
                             const cids = fj?.IdentifierList?.CID || [];
                             const handled = await handleCidsList(cids, 'fastformula');
                             if (handled) return;
+                            if (cids.length) debugSteps.push('fastformula 查询到 CID 但未获得可用 SMILES');
+                            else debugSteps.push('fastformula 未返回 CID');
+                        } else {
+                            debugSteps.push('fastformula 查询失败：' + (frFast.error || ('HTTP ' + frFast.status)));
                         }
                         // 如果 fastformula 未命中，再尝试标准 formula 接口
-                        const fUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/' + formula + '/cids/JSON';
-                        const fr = await fetch(fUrl);
+                        const fr = await pubchemFetchJSON('compound/formula/' + formula + '/cids/JSON');
                         if (fr.ok) {
-                            const fj = await fr.json();
+                            const fj = fr.data;
                             const cids = fj?.IdentifierList?.CID || [];
                             const handled = await handleCidsList(cids, 'formula');
                             if (handled) return;
+                            if (cids.length) debugSteps.push('formula 查询到 CID 但未获得可用 SMILES');
+                            else debugSteps.push('formula 未返回 CID');
+                        } else {
+                            debugSteps.push('formula 查询失败：' + (fr.error || ('HTTP ' + fr.status)));
                         }
-                    } catch (fe) { /* ignore formula lookup errors */ }
+                    } catch (fe) {
+                        debugSteps.push('formula 回退查询异常：' + (fe && fe.message ? fe.message : String(fe)));
+                    }
 
                     throw new Error('PubChem 未返回 SMILES (name search failed, and formula fallbacks failed)');
                 }
-                const j = await r.json();
+                const j = r.data;
                 const smi = extractSmilesFromProperty(j);
                 if (smi) {
                     if (inputEl) inputEl.value = smi;
@@ -865,28 +1172,51 @@
                 // 如果按名称/直接查找失败，尝试按化学式（formula）查询 PubChem
                 try {
                     const formula = encodeURIComponent(s);
-                    const fUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/formula/' + formula + '/cids/JSON';
-                    const fr = await fetch(fUrl);
+                    const fr = await pubchemFetchJSON('compound/formula/' + formula + '/cids/JSON');
                     if (fr.ok) {
-                        const fj = await fr.json();
+                        const fj = fr.data;
                         const cids = fj?.IdentifierList?.CID || [];
                         const handled = await handleCidsList(cids, 'formula');
                         if (handled) return;
+                        if (cids.length) debugSteps.push('最终 formula 回退查询到 CID 但未获得可用 SMILES');
+                        else debugSteps.push('最终 formula 回退未返回 CID');
+                    } else {
+                        debugSteps.push('最终 formula 回退失败：' + (fr.error || ('HTTP ' + fr.status)));
                     }
-                } catch (ee) { /* ignore formula lookup errors */ }
+                } catch (ee) {
+                    debugSteps.push('最终 formula 回退异常：' + (ee && ee.message ? ee.message : String(ee)));
+                }
 
                 if (status) status.innerText = '未能解析为 SMILES：' + e;
-                alert('未能将输入解析为 SMILES 或在 PubChem 找到匹配。错误：' + e);
+                const errText = e && e.message ? e.message : String(e);
+                const details = [
+                    '解析失败：未能将输入转换为有效 SMILES。',
+                    '',
+                    '输入内容：' + s,
+                    '',
+                    '已执行步骤：',
+                    '1) 本地 RDKit 解析',
+                    '2) PubChem 名称属性查询',
+                    '3) PubChem 名称 -> CID 查询',
+                    '4) PubChem fastformula/formula 回退查询',
+                    '',
+                    '失败详情：'
+                ];
+                if (debugSteps.length) {
+                    debugSteps.forEach((item, idx) => details.push((idx + 1) + '. ' + item));
+                } else {
+                    details.push('1. 未捕获到额外诊断信息');
+                }
+                details.push('');
+                details.push('最终错误：' + errText);
+                details.push('');
+                details.push('建议：');
+                details.push('1) 确认输入拼写，或直接输入标准 SMILES（例如 CCO）');
+                details.push('2) 若输入的是化学式（例如 C6H12O6），请检查大小写和数字');
+                details.push('3) 若网络不稳定或 PubChem 暂时不可用，请稍后重试');
+                alert(details.join('\n'));
             }
         }
-
-        // 小 UI: 更新提示与弹窗
-        function showUpdateTip() { const tip = document.getElementById('update-tip'); tip.style.display = 'block'; setTimeout(()=>tip.style.display='none',3500); }
-        const UPDATE_VERSION = '2025-5-21S#1.2.3-1.4.3+';
-        const UPDATE_LOG = `\n- 支持多重键（双键、三键等）3D显示\n- 同分异构体支持\n- NewTech1.0风格弹窗支持\n`;
-        function showUpdateModal(){ document.getElementById('update-modal-title').innerText='你获得了一份新的更新！'; document.getElementById('update-modal-version').innerText='版本号：'+UPDATE_VERSION; document.getElementById('update-modal-log').innerText=UPDATE_LOG; document.getElementById('update-modal').style.display='block'; }
-        function closeUpdateModal(){ document.getElementById('update-modal').style.display='none'; }
-        if (localStorage.getItem('chem2line_version') !== UPDATE_VERSION) { showUpdateModal(); localStorage.setItem('chem2line_version', UPDATE_VERSION); }
 
         // 摇杆与缩放支持：使用旧模板的完整 joystick 实现（触摸 + 鼠标 + 防滚动）
         // Variables for joystick and zoom
@@ -1004,11 +1334,105 @@
             camera.position.z = event.target.value;
         });
 
+        // ─── 3D Canvas 触摸手势支持（移动端） ───
+        (function() {
+            let touchStartX = 0, touchStartY = 0;
+            let lastPinchDist = 0;
+            let isSingleTouch = false;
+
+            canvas.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    isSingleTouch = true;
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    isSingleTouch = false;
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    lastPinchDist = Math.sqrt(dx * dx + dy * dy);
+                }
+                e.preventDefault();
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', function(e) {
+                if (e.touches.length === 1 && isSingleTouch) {
+                    // 单指拖动 = 旋转
+                    const dx = e.touches[0].clientX - touchStartX;
+                    const dy = e.touches[0].clientY - touchStartY;
+                    moleculeGroup.rotation.y += dx * 0.01;
+                    moleculeGroup.rotation.x += dy * 0.01;
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    // 双指缩放
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (lastPinchDist > 0) {
+                        const scale = dist / lastPinchDist;
+                        camera.position.z = Math.max(1, Math.min(50, camera.position.z / scale));
+                        zoomSlider.value = Math.round(camera.position.z);
+                    }
+                    lastPinchDist = dist;
+                }
+                e.preventDefault();
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', function(e) {
+                if (e.touches.length === 0) {
+                    isSingleTouch = false;
+                    lastPinchDist = 0;
+                }
+            });
+        })();
+
+        // ─── 窗口大小变化时自适应 canvas ───
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 768) {
+                const rightPanel = document.getElementById('right-panel');
+                if (rightPanel && rightPanel.clientWidth > 0) {
+                    const newSize = Math.min(rightPanel.clientWidth - 20, 500);
+                    canvas.style.width = newSize + 'px';
+                    canvas.style.height = newSize + 'px';
+                    canvas.width = newSize;
+                    canvas.height = newSize;
+                    if (renderer) renderer.setSize(newSize, newSize);
+                }
+            }
+        });
+
         // 启动时设置输入初始值并应用持久化的画布尺寸
-        window.addEventListener('load', ()=>{ 
+        window.addEventListener('load', ()=>{
             const inp = document.getElementById('canvasSizeInput');
             if (inp) inp.value = canvasSize;
             try { renderer.setSize(canvasSize, canvasSize); } catch(e){}
+            if (runtimeOptions.debugMode) syncBackendDebugMode();
+
+            // 移动端自适应 canvas
+            if (window.innerWidth <= 768) {
+                const rightPanel = document.getElementById('right-panel');
+                if (rightPanel && rightPanel.clientWidth > 0) {
+                    const mobileSize = Math.min(rightPanel.clientWidth - 20, 400);
+                    canvas.style.width = mobileSize + 'px';
+                    canvas.style.height = mobileSize + 'px';
+                    canvas.width = mobileSize;
+                    canvas.height = mobileSize;
+                    if (renderer) renderer.setSize(mobileSize, mobileSize);
+                    canvasSize = mobileSize;
+                    if (inp) inp.value = mobileSize;
+                }
+            }
+
+            // 初始化强制SMILES复选框
+            const forceSMILESCheckbox = document.getElementById('forceSMILES');
+            if (forceSMILESCheckbox) {
+                forceSMILESCheckbox.checked = runtimeOptions.forceSMILES;
+                forceSMILESCheckbox.addEventListener('change', (e) => {
+                    runtimeOptions.forceSMILES = e.target.checked;
+                    localStorage.setItem('chem2line_force_smiles', e.target.checked ? '1' : '0');
+                });
+            }
+
             if (RDKitModule){};
         });
     </script>

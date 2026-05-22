@@ -163,3 +163,4 @@ pubchem_data.sdf
 buildvm/
 history.xml
 lib/history.xml
+.vscode/settings.json
