@@ -107,6 +107,7 @@
                                 输入：<input id="smiles_input" type="text" value="CCO" style="width:60%; min-width:120px;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"> <button onclick="loadMolecule()">加载</button>
                                 <button onclick="resetFrontendState()" style="margin-left:8px;">重置</button>
                                 <input type="checkbox" id="forceSMILES" style="margin-left:8px;"> <label for="forceSMILES" style="font-size:12px;">强制SMILES</label>
+                                <input type="checkbox" id="forceProxy" style="margin-left:8px;"> <label for="forceProxy" style="font-size:12px;">强制代理</label>
                             </div>
                             <div id="descrs" style="margin-top:8px;"></div>
                             <div id="canvas-div" style="margin-top:8px;">
@@ -182,8 +183,8 @@
             </div>
         </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+    <script src="assets/three.min.js"></script>
+    <script src="assets/RDKit_minimal.js"></script>
     <script>
         function setHealthStatus(target, state, text) {
             const light = document.getElementById(target + '-light');
@@ -247,7 +248,9 @@
 
         // RDKit 初始化
         let RDKitModule = null;
-        initRDKitModule().then(function (m) {
+        initRDKitModule({
+            locateFile: () => "assets/RDKit_minimal.wasm"
+        }).then(function (m) {
             RDKitModule = m;
             setHealthStatus('rdkit', 'green', 'RDKit 正常');
             console.log('RDKit ready', RDKitModule.version());
@@ -1430,6 +1433,16 @@
                 forceSMILESCheckbox.addEventListener('change', (e) => {
                     runtimeOptions.forceSMILES = e.target.checked;
                     localStorage.setItem('chem2line_force_smiles', e.target.checked ? '1' : '0');
+                });
+            }
+
+            // 初始化强制代理复选框
+            const forceProxyCheckbox = document.getElementById('forceProxy');
+            if (forceProxyCheckbox) {
+                forceProxyCheckbox.checked = runtimeOptions.forceProxy;
+                forceProxyCheckbox.addEventListener('change', (e) => {
+                    runtimeOptions.forceProxy = e.target.checked;
+                    localStorage.setItem('chem2line_force_proxy', e.target.checked ? '1' : '0');
                 });
             }
 
